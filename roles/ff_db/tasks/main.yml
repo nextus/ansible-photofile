@@ -1,0 +1,42 @@
+---
+
+- name: Install mysql interface to python
+  yum: name=MySQL-python state=present
+  tags:
+    - mysql
+
+- name: Create tmp directory for mysql
+  file: path=/www/tmp/mysql owner=mysql group=mysql mode=0775 state=directory
+  tags:
+    - mysql
+
+- name: Create logs directory for mysql
+  file: path={{ LOG_DIR }}/mysql owner=mysql group=mysql mode=0775 state=directory
+  tags:
+    - mysql
+
+- name: Ensure anonymous users are not in the database
+  mysql_user: name="" login_user=root login_password={{ DB_ROOT_PASSWORD }} login_unix_socket={{ DB_SOCKET }} state=absent
+  tags:
+    - mysql
+
+- name: Set root password
+  mysql_user: name=root host=localhost password={{ DB_ROOT_PASSWORD }} login_unix_socket={{ DB_SOCKET }}
+  tags:
+    - mysql
+
+- name: Deploy root my.cnf
+  template: src=root-my.cnf.j2 dest=/root/.my.cnf backup=no owner=root group=wheel mode=0400
+  tags:
+    - mysql
+
+- name: Create monitoring database
+  mysql_db: name=monitoring state=present login_unix_socket={{ DB_SOCKET }} 
+  tags:
+    - mysql
+
+- name: Create monitoring user
+  mysql_user: name=monitoring host=195.239.111.184 password=hidden priv="monitoring.*:ALL/*.*:PROCESS,SUPER,REPLICATION CLIENT" login_unix_socket={{ DB_SOCKET }}
+  tags:
+    - mysql
+

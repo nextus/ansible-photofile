@@ -1,0 +1,172 @@
+{% include 'templates/banner.j2' %}
+
+server {
+    listen          83.229.209.140:80;
+    server_name     files.qip.ru;
+
+    access_log      off;
+    error_log       {{ DISK_QIP_LOGS }}/{{ NGINX_ERROR_LOG }};
+
+    rewrite         ^(.*)$ http://file.qip.ru$1 permanent;
+}
+
+server {
+
+    listen          83.229.209.140:80;
+    server_name     disk.qip.ru file.qip.ru;
+
+    charset utf8;
+
+    access_log      {{ DISK_QIP_LOGS }}/{{ NGINX_ACCESS_LOG }};
+    error_log       {{ DISK_QIP_LOGS }}/{{ NGINX_ERROR_LOG }};
+
+    location ~* /search.html {
+        if ( $args ~ "searchName=(.+)" ) {
+            set $searchstring $1;
+            rewrite ^/search.html http://search.qip.ru/search?query=$searchstring? permanent;
+        }
+    }
+
+    location /share {
+        rewrite /share/(.*)   /fhd_share.php/$1 break;
+        proxy_pass      http://83.229.209.143;
+        proxy_read_timeout 120s;
+        proxy_connect_timeout 120s;
+    }
+
+    location ~* /^(embed|download|account|ads|rss|images|bundles|imageview|get|dir|minifolder|document) {
+        return 204;
+    }
+
+    location ~* ^/([A-Za-z0-9\-\_]+).html$ {
+        root /www/disk.qip.ru/root/htdocs/static;
+        break;
+    }
+
+    location /android {
+        return 301 http://qip.ru/mobile/android;
+    }
+
+    location /index.jsp {
+        return 301 http://file.qip.ru;
+    }
+
+    location /requestCall.jsp {
+        return 301 http://file.qip.ru;
+    }
+
+    location /signup.jsp {
+        return 301 http://file.qip.ru;
+    }
+
+    location /folder {
+        return 301 http://file.qip.ru;
+    }
+
+    location /audio {
+        return 301 http://file.qip.ru;
+    }
+
+    location /all-images {
+        return 301 http://file.qip.ru;
+    }
+
+    location ~* /[A-Za-z0-9\_\-]+.jsp {
+        return 301 http://file.qip.ru;
+    }
+
+    location ~* /(ext|img|skin)/ {
+        root /www/disk.qip.ru/root/htdocs;
+        expires 1d;
+    }
+
+    location ~* \.(ico|txt)$ {
+        root /www/disk.qip.ru/root/htdocs/static;
+        expires 1d;
+    }
+
+    location /api2
+    {
+        rewrite /(.*)   /fhd_api.php/$1 break;
+        proxy_pass      http://83.229.209.143;
+    }
+
+    location /api
+    {
+        rewrite /(.*)   /api.php/$1 break;
+        proxy_pass      http://83.229.209.143;
+    }
+
+    location ~ /(soap|QIPDiskApp)
+    {
+        rewrite /(.*)   /fhd_soap.php/$1 break;
+        proxy_pass      http://83.229.209.143;
+    }
+
+    location ~ DesktopApp
+    {
+#                    if ( $http_user_agent ~ "Borland SOAP 1.2" ) {
+#                        return 444;
+#                    }
+
+        rewrite /(.*)   /fhd_soap.php/$1 break;
+        proxy_pass      http://83.229.209.143;
+    }
+
+    location /upload
+    {
+        rewrite /(.*)   /fhd_upload.php/$1 break;
+        proxy_pass      http://83.229.209.143;
+        proxy_read_timeout 120s;
+        proxy_connect_timeout 120s;
+    }
+
+    location /file
+    {
+        rewrite /file/(.*)   /fhd_share.php/$1 break;
+        proxy_pass      http://83.229.209.143;
+    }
+
+    location /~
+    {
+        rewrite /(.*)   /fhd_share.php/$1 break;
+        proxy_pass      http://83.229.209.143;
+    }
+
+    location /music
+    {
+        rewrite /music/(.*)   /fhd_share.php/$1 break;
+        proxy_pass      http://83.229.209.143;
+    }
+
+    location /video
+    {
+        rewrite /video/(.*)   /fhd_share.php/$1 break;
+        proxy_pass      http://83.229.209.143;
+    }
+
+    location /office
+    {
+        rewrite /office/(.*)   /fhd_share.php/$1 break;
+        proxy_pass      http://83.229.209.143;
+    }
+
+    location /photo
+    {
+        rewrite /photo/(.*)   /fhd_share.php/$1 break;
+        proxy_pass      http://83.229.209.143;
+    }
+
+    location /arch
+    {
+        rewrite /arch/(.*)   /fhd_share.php/$1 break;
+        proxy_pass      http://83.229.209.143;
+    }
+
+    location / {
+        root /www/disk2.qip.ru;
+        proxy_pass http://83.229.209.143;
+        proxy_read_timeout 120s;
+        proxy_connect_timeout 120s;
+    }
+}

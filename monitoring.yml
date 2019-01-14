@@ -1,0 +1,15 @@
+- name: Gather facts from photofile storage
+  hosts: all
+  sudo: no
+  vars_files:
+    - "group_vars/{{ ansible_system }}.yml"
+  tasks:
+    - include: roles/reglament/tasks/ff.yml
+
+- name: Generate photofile monitoring config
+  hosts: monitoring
+  sudo: no
+  vars_files:
+    - "group_vars/{{ ansible_system }}.yml"
+  roles:
+    - monitoring

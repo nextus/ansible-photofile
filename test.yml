@@ -1,0 +1,8 @@
+---
+
+- name: test playbook
+  hosts: test
+  sudo: yes
+  tasks:
+    - name: Install zoneinfo packet
+      portinstall: name=zoneinfo state=present use_packages=yes

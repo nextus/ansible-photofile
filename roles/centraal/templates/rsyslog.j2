@@ -1,0 +1,72 @@
+## CENTRALIZED LOGS AGGREGATION ##
+
+# Provides TCP syslog reception
+$ModLoad imtcp.so
+
+$DefaultNetstreamDriverCertFile /etc/ssl/certs/star_itmm_ru.crt
+$DefaultNetstreamDriverKeyFile /etc/pki/tls/private/star_itmm_ru.key
+
+## TEMPLATES ##
+$template RemoteAuth,"/www/logs/%HOSTNAME%/auth.log"
+$template RemoteKernel,"/www/logs/%HOSTNAME%/kernel.log"
+$template RemoteEmerg,"/www/logs/%HOSTNAME%/emerg.log"
+$template RemoteYum,"/www/logs/%HOSTNAME%/yum.log"
+$template RemotePkg,"/www/logs/%HOSTNAME%/pkg.log"
+$template RemoteAnsible,"/www/logs/%HOSTNAME%/ansible.log"
+$template RemoteCron,"/www/logs/%HOSTNAME%/cron.log"
+$template RemoteMail,"/www/logs/%HOSTNAME%/mail.log"
+$template RemoteSudo,"/www/logs/%HOSTNAME%/sudo.log"
+
+## Projects
+# photofile.ru
+$template WebPhotofileAccess,"/www/logs/projects/photofile.ru/access.log"
+$template WebPhotofileError,"/www/logs/projects/photofile.ru/error.log"
+# shot.qip.ru
+$template WebShotStoragesAccess,"/www/logs/projects/shot.qip.ru/storages-access.log"
+$template WebDavShotStoragesAccess,"/www/logs/projects/shot.qip.ru/storages-dav-access.log"
+$template WebShotStoragesError,"/www/logs/projects/shot.qip.ru/storages-error.log"
+$template WebDavShotStoragesError,"/www/logs/projects/shot.qip.ru/storages-dav-error.log"
+
+## REMOTE RULESET ##
+$RuleSet remote
+
+## Projects
+# photofile.ru
+if $syslogtag == 'photofile-access:' then               -?WebPhotofileAccess
+& ~
+
+if $syslogtag == 'photofile-error:' then                -?WebPhotofileError
+& ~
+
+# shot.qip.ru
+if $syslogtag == 'shot-storages:' and $syslogseverity <= 3 then                   -?WebShotStoragesError
+& ~
+
+if $syslogtag == 'shot-storages:' and $syslogseverity-text == 'info' then         -?WebShotStoragesAccess
+& ~
+
+if $syslogtag == 'shot-dav-storages:' and $syslogseverity <= 3 then               -?WebDavShotStoragesError
+& ~
+
+if $syslogtag == 'shot-dav-storages:' and $syslogseverity-text == 'info' then     -?WebDavShotStoragesAccess
+&~
+
+
+if $programname contains 'ansible' then                 -?RemoteAnsible
+& ~
+if $syslogtag == 'sudo:' then                           -?RemoteSudo
+& ~
+auth.*;authpriv.*                                       -?RemoteAuth
+kern.*                                                  -?RemoteKernel
+cron.*                                                  -?RemoteCron
+mail.*                                                  -?RemoteMail
+*.emerg                                                 -?RemoteEmerg
+if $programname == 'yum' then                           -?RemoteYum
+if $programname == 'pkg' then                           -?RemotePkg
+
+$InputTCPServerBindRuleset remote
+
+$InputTCPServerStreamDriverMode 1
+$InputTCPServerStreamDriverAuthMode anon
+$InputTCPServerRun 514
+

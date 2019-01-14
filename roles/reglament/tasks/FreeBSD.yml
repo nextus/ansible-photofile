@@ -1,0 +1,239 @@
+---
+
+# Doesn't work right now: https://groups.google.com/forum/#!msg/ansible-project/jgc-5Yertuc/JI6icHhWaiMJ
+#- name: Set noatime option for production partitions
+#  lineinfile: dest=/etc/fstab regexp='^(/dev/(label/\w+|\w+)\s+(/www[0-9]*|/backup[0-9s]*|/logs)\s+ufs\s+)(rw|rw,async)(\s+)(.*)$' line='\1\4,noatime\5\6' backrefs=yes state=present
+#  register: result
+#  until: changed == "False"
+#  notify: remount fstab
+#  tags:
+#    - fstab
+
+- name: Set hostname
+  lineinfile: dest=/etc/rc.conf regexp='^(\s)*hostname=' line='hostname="{{ inventory_hostname }}"' state=present
+  notify: update hostname
+  tags:
+    - hostname
+
+- name: Deploy IPFW rules
+  template: src=FreeBSD/ipfw.rules.j2 dest=/etc/ipfw.rules mode=755 owner=root group=wheel
+  notify: reload firewall
+  when: ansible_system == "FreeBSD" and bsd_firewall == "ipfw"
+  tags:
+    - firewall
+
+- name: Deny users crontab
+  copy: content= dest=/var/cron/allow owner=root group=wheel mode=644 force=no
+  tags:
+    - cron
+
+- name: Download /etc/sysctl.conf
+  get_url: force=yes url="https://mnt.itmm.ru/pub/conf-reglament/FreeBSD/sysctl.conf" dest=/etc/sysctl.conf mode=644 owner=root group=wheel
+  notify: reload sysctl
+
+- name: Download workaround for em driver
+  get_url: force=yes url="https://mnt.itmm.ru/pub/conf-reglament/FreeBSD/em-settings.sh" dest=/usr/local/etc/rc.d/em-settings.sh mode=755 owner=root group=wheel
+  when: ansible_default_ipv4.interface.find("em") != -1
+
+- name: Download make.conf and src.conf
+  script: make-conf.sh
+
+- name: Download shell settings
+  template: src=FreeBSD/{{ item }}.j2 dest=/etc/{{ item }} backup=no owner=root group=wheel mode=0444
+  with_items:
+    - periodic.conf
+    - profile
+    - csh.cshrc
+
+- name: Download boot-notify.sh
+  get_url: force=yes url="https://mnt.itmm.ru/pub/boot-notify.sh" dest=/usr/local/etc/rc.d/boot-notify.sh mode=755 owner=root group=wheel
+
+# Postfix
+- name: Disable sendmail
+  service: name=sendmail enabled=no state=stopped
+  tags:
+    - mail
+
+- name: Clean postfix env
+  file: path={{ item }} state=absent
+  with_items:
+    - /usr/local/etc/postfix/canonical_recipient
+    - /usr/local/etc/postfix/canonical_recipient.db
+    - /usr/local/etc/postfix/canonical_sender
+    - /usr/local/etc/postfix/canonical_sender.db
+  notify: reload postfix
+  tags:
+    - mail
+
+- name: Deploy postfix config
+  template: src=FreeBSD/postfix-main.cf.j2 dest=/usr/local/etc/postfix/main.cf backup=yes owner=root group=wheel mode=0444
+  notify: reload postfix
+  tags:
+    - mail
+
+- name: Download mailer.conf
+  get_url: force=yes url="https://mnt.itmm.ru/pub/conf-reglament/FreeBSD/mailer.conf" dest=/etc/mail/mailer.conf mode=644 owner=root group=wheel
+  notify: reload postfix
+  tags:
+    - mail
+
+- name: Enable postfix
+  service: name=postfix enabled=yes state=started
+  tags:
+    - mail
+# Postfix
+
+# rsyslog
+- name: Create directory for rsyslog spool
+  file: path=/logs/rsyslog owner=root group=wheel mode=0775 state=directory
+  notify: restart rsyslog
+  when: ansible_distribution_release.find("9.1") == 0
+  tags:
+    - rsyslog
+
+- name: Remove depricated versions of the rsyslog
+  pkgng: name={{ item }} state=absent
+  with_items:
+    - rsyslog6-gnutls
+    - rsyslog6
+  notify: restart rsyslog
+  when: ansible_distribution_release.find("9.1") == 0
+  tags:
+    - rsyslog
+
+- name: Install deps for rsyslog
+  pkgng: name={{ item }} state=present
+  with_items:
+    - libgcrypt
+    - p11-kit
+    - json-c
+    - gnutls
+    - nettle
+    - libestr
+    - libee
+  notify: restart rsyslog
+  when: ansible_distribution_release.find("9.1") == 0
+  tags:
+    - rsyslog
+
+- name: Check whether rsyslog7 installed or not
+  shell: pkg info rsyslog
+  register: res
+  changed_when: False
+  always_run: yes
+  failed_when: False
+  when: ansible_distribution_release.find("9.1") == 0
+  tags:
+    - rsyslog
+
+- name: Install rsyslog7 with tls support
+  shell: pkg add https://mnt.itmm.ru/pub/conf-reglament/FreeBSD/rsyslog-7.4.4_1.txz
+  notify: restart rsyslog
+  when: ansible_distribution_release.find("9.1") == 0 and res.rc != 0
+  tags:
+    - rsyslog
+
+- name: Download rsyslog config
+  template: src=rsyslog.conf.j2 dest=/usr/local/etc/rsyslog.conf owner=root group=wheel mode=0444
+  notify: restart rsyslog
+  when: ansible_distribution_release.find("9.1") == 0
+  tags:
+    - rsyslog
+
+- name: Change syslog PID
+  lineinfile: dest=/usr/local/etc/snmp/snmpd.conf regexp='^proc "(r)?syslogd"' line='proc "rsyslogd"' state=present
+  notify: restart snmpd
+  when: ansible_distribution_release.find("9.1") == 0
+  tags:
+    - rsyslog
+
+- name: Change syslog PID
+  lineinfile: dest=/etc/rc.conf regexp='^rsyslogd_pidfile' line='rsyslogd_pidfile="/var/run/syslog.pid"' state=present
+  notify: restart rsyslog
+  when: ansible_distribution_release.find("9.1") == 0
+  tags:
+    - rsyslog
+
+- name: Disable default syslog
+  service: name=syslogd enabled=no state=stopped
+  when: ansible_distribution_release.find("9.1") == 0
+  tags:
+    - rsyslog
+
+- name: Enable rsyslog
+  service: name=rsyslogd enabled=yes state=started
+  when: ansible_distribution_release.find("9.1") == 0
+  tags:
+    - rsyslog
+
+- name: Autostart rsyslog at boot time
+  service: name=rsyslogd enabled=yes
+  when: ansible_distribution_release.find("9.1") == 0
+  tags:
+    - rsyslog
+# rsyslog
+
+# named
+# FIXME: this task must be prior of the /etc/resolv.conf deployment
+- name: Download config for cached named
+  get_url: force=yes url="https://mnt.itmm.ru/pub/conf-reglament/FreeBSD/named.conf.{{ ansible_distribution_release.split('.')[0]|int }}" dest=/etc/namedb/named.conf mode=444 owner=root group=bind
+  notify: restart bind
+  when: CACHED_BIND == "YES"
+  tags:
+    - bind
+
+- name: Create working directory for cached named
+  file: path=/etc/namedb/working owner=bind group=wheel mode=0755 state=directory
+  notify: restart bind
+  when: CACHED_BIND == "YES"
+  tags:
+    - bind
+
+- name: Autostart bind
+  service: name=named enabled=yes
+  when: CACHED_BIND == "YES"
+  tags:
+    - bind
+
+- name: Run bind
+  service: name=named state=started
+  when: CACHED_BIND == "YES"
+  tags:
+    - bind
+# named
+
+- name: Deploy snmpd conf
+  template: src=FreeBSD/snmpd.conf.j2 dest=/usr/local/etc/snmp/snmpd.conf mode=444 owner=root group=wheel backup=no
+  notify: restart snmpd
+  tags:
+    - snmpd
+
+# MegaCLI
+- name: Determine whether server has raid controller or not
+  command: mfiutil show adapter
+  register: res
+  changed_when: False
+  always_run: yes
+  failed_when: False
+  tags:
+    - disks
+
+- name: Deploy MegaCli binary packet
+  get_url: force=yes url="https://mnt.itmm.ru/pub/conf-reglament/FreeBSD/MegaCli" dest=/root/bin/MegaCli mode=0511 owner=root group=wheel
+  when: res.rc == 0
+  tags:
+    - disks
+
+- name: Enable linux binary compability in freebsd
+  shell: brandelf -t Linux  /root/bin/MegaCli
+  changed_when: False
+  when: res.rc == 0
+  tags:
+    - disks
+# MegaCLI
+
+- name: Create ecdsa key
+  command: ssh-keygen -t ecdsa -f /etc/ssh/ssh_host_ecdsa_key -N '' creates=/etc/ssh/ssh_host_ecdsa_key
+  when: ansible_distribution_release.find("9.1") == 0
+  tags:
+    - ssh

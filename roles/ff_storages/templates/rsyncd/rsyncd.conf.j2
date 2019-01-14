@@ -1,0 +1,27 @@
+# rsyncd.conf - Example file, see rsyncd.conf(5)
+#
+
+# Set this if you want to stop rsync daemon with rc.d scripts
+pid file = /var/run/rsyncd.pid
+
+# Edit this file before running rsync daemon!!
+
+uid = www
+gid = w3photofile
+use chroot = no
+syslog facility = local5
+
+# photofile photos
+{% for item in FF_STORAGES.stdout_lines %}
+[photo{{ item }}]
+path = /{{ FF_ROOT_FOLDER.stdout_lines[loop.index0] }}/ff{{ item }}.photofile.ru/data/photo
+read only = yes
+dont compress = *.*
+hosts allow ={% for subnet in SUBNETS %} {{ subnet }}{% endfor %}
+
+secrets file = /usr/local/etc/rsyncd.secrets
+auth users = photofile.ru
+
+{% endfor %}
+
+{% include 'roles/ff_storages/templates/rsyncd/rsyncd.conf.' ~ ansible_hostname ~ '.j2' ignore missing %} 

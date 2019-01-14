@@ -1,0 +1,78 @@
+---
+
+# sudoers
+- name: Enable email alerts for unauthorized requests to sudo
+  lineinfile: dest={{ SUDOERS }} regexp='^Defaults\s+mailto=' insertbefore="^Defaults\s+" line="Defaults mailto=root@itmm.ru, mail_no_perms, mail_no_user" state=present
+  tags: 
+    - sudo
+# sudoers
+
+- name: Set /etc/crontab
+  template: src={{ ansible_system }}/crontab.j2 dest=/etc/crontab backup=no owner=root group=wheel mode=0644
+  tags:
+    - cron
+
+# tzdata
+- name: Create dir for zoneinfo
+  file: path=/usr/share/zoneinfo/Europe owner=root mode=0755 state=directory
+  notify: restart snmpd
+  tags:
+    - tz
+
+- name: Download updated timezone
+  get_url: url="https://mnt.itmm.ru/pub/conf-reglament/All/localtime" dest=/usr/share/zoneinfo/Europe/Moscow mode=444 owner=root group=wheel
+  tags:
+    - tz
+
+- name: Set appropriate timezone
+  file: src=/usr/share/zoneinfo/Europe/Moscow dest=/etc/localtime owner=root group=wheel state=link force=yes
+  tags:
+    - tz
+# tzdata
+
+- name: Disallow ssh acces for root 
+  lineinfile: dest=/etc/ssh/sshd_config regexp='^[#]*PermitRootLogin' line="PermitRootLogin no" state=present
+  notify: reload sshd
+  tags:
+    - ssh
+
+- name: Disable unused ssh auth methods
+  lineinfile: dest=/etc/ssh/sshd_config regexp='^[#]*GSSAPIAuthentication' line="GSSAPIAuthentication no" state=present
+  notify: reload sshd
+  tags:
+    - ssh
+
+- name: Create directory for root scripts
+  file: path=/root/bin owner=root group=wheel mode=0755 state=directory
+
+- name: Create directory for temp files
+  file: path=/www/tmp owner=root group=wheel mode=0777 state=directory
+
+- name: Put ff-sship
+  template: src=fw-sship.j2 dest=/root/bin/fw-sship backup=yes owner=root group=wheel mode=0444
+  notify: reload firewall
+  tags:
+    - firewall
+
+- name: Set appropriate resolve.conf
+  copy: src=resolv.conf dest=/etc/resolv.conf owner=root group=wheel mode=644 force=yes
+  tags:
+    - bind
+
+- name: Create tmp directory with suid bit
+  file: path=/tmp owner=root group=wheel mode=1777 state=directory
+
+- name: Download logrotate script
+  copy: src=lr.sh dest=/root/bin/lr.sh owner=root group=wheel mode=755 force=yes
+  tags:
+    - root-scripts
+
+- name: Download check_disks.pl
+  get_url: force=yes url="https://mnt.itmm.ru/pub/conf-reglament/All/check_disks.pl" dest=/root/bin/check_disks.pl mode=755 owner=root group=wheel
+  tags:
+    - root-scripts
+
+- name: Deploy check_stuff.py (under construction)
+  copy: src=check_stuff.py dest=/root/bin/check_stuff.py owner=root group=wheel mode=755 force=yes
+  tags:
+    - temp

@@ -1,0 +1,11 @@
+/logs/*apache*_log /logs/*/*apache*_log /logs/error_log /logs/*/error_log {
+    daily
+    rotate 14
+    compress
+    sharedscripts
+    dateext
+    missingok
+    postrotate
+        /bin/kill -HUP $(cat {{ APACHE_PID }} 2>/dev/null) 2>/dev/null || :
+    endscript
+}

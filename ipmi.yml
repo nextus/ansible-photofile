@@ -1,0 +1,13 @@
+- name: Set up IPMI
+  hosts: all
+  sudo: yes
+  vars_files:
+    - "group_vars/{{ ansible_system }}.yml"
+  vars_prompt:
+    - name: "IPMI_PASS"
+      prompt: "Enter desired password for IPMI management: "
+      private: yes
+  tags: [ 'ipmi', 'reglament' ]
+  roles:
+    - ipmi
+

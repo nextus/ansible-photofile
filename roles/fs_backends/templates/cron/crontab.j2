@@ -1,0 +1,4 @@
+MAILTO={{ CRON_MAIL }}
+*/30    *       *       *       *       root        /usr/bin/find /tmp -name upl* -type f -mmin +30 -delete
+#*/15    *       *       *       *       fstorage    /www/fs.internal.qip.ru/root/bin/df.php run
+

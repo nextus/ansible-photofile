@@ -1,0 +1,28 @@
+{% include 'templates/banner.j2' %}
+
+location ~* ^/static {
+	root /www/fs.internal.qip.ru/root/htdocs;
+}
+
+location ~ ^/.+\.(txt|xml|html|htm|ico) {
+	root /www/fs.internal.qip.ru/root/htdocs/static;
+}
+
+location ~* ^/g/ {
+	rewrite ^/g/([^/]+)/(.+)\.(.*)\.(.*) /$1/$2.$4 last;
+	root /www/fs.internal.qip.ru/root/htdocs/;
+}
+
+location ~* ^/(j|c|i)/ {
+	root /www/fs.internal.qip.ru/root/htdocs/;
+}
+
+location /fs/ {
+	if ( $uri ~ ^/fs/([0-9]+)/ ) {
+		set $proxy_host "fs$1.jpe.ru";
+	}
+	rewrite ^/fs/[0-9]+/([0-9a-z_-]+)/(.*)$ /$1/$2 break;
+	proxy_set_header Host $proxy_host;
+	proxy_pass http://$proxy_host;
+	resolver 127.0.0.1;
+}

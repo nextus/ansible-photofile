@@ -1,0 +1,116 @@
+########################
+# HOSTGROUP DEFINITION #
+########################
+
+define hostgroup {
+        hostgroup_name  shot
+        alias           shot
+        members         {% for host in groups['shot'] %}{{ host }},{% endfor %}
+
+}
+
+####################
+# HOSTS DEFINITION #
+####################
+
+{% for host in groups['shot'] %}
+define host {
+                use                     generic-host
+                host_name               {{ host }}
+                alias                   {{ host }}
+                address                 {{ hostvars[host]["ansible_default_ipv4"]["address"] }}
+}
+
+{% endfor %}
+###############################
+# DEFAULT SERVICES DEFINITION #
+###############################
+
+define service {
+                use                             relax-service
+                hostgroup                       shot
+                service_description             ssh
+                check_command                   check_ssh
+}
+
+define service {
+                use                             relax-service
+                hostgroup                       shot
+                service_description             CPU and swap
+                check_command                   check_cpuswap_snmp
+}
+
+define service {
+                use                             relax-service
+                hostgroup                       shot
+                service_description             check_time
+                check_command                   check_time
+}
+
+define service {
+                use                             relax-slow-service
+                hostgroup                       shot
+                service_description             system_check
+                check_command                   check_snmp_proc
+}
+
+define service {
+                use                             relax-slow-service
+                hostgroup                       shot
+                service_description             raid
+                check_command                   check_log_snmp!raidmon
+}
+
+#######################
+# SERVICES DEFINITION #
+#######################
+
+
+# SHOT_BACKENDS
+
+{% for host in groups['shot_backends'] %}
+
+# {{ host }}
+
+define service {
+                use                             relax-slow-service
+                host_name                       {{ host }}
+                service_description             http-shot.qip.ru
+                check_command                   check_http_ex!{{ host }}!/!80
+}
+
+define service {
+                use                             relax-service
+                host_name                       {{ host }}
+                service_description             memcached
+                check_command                   check_tcp!{{ hostvars[host]['MEMCACHED_PORT'] }}
+}
+
+define service {
+                use                             relax-service
+                host_name                       {{ host }}
+                service_description             memcached-hit
+                check_command                   check_memcached_hit_custom!{{ host }}:{{ hostvars[host]['MEMCACHED_PORT'] }}
+}
+
+# {{ host }}
+
+{% endfor %}
+
+# SHOT_STORAGES
+
+{% for host in groups['shot_storages'] %}
+
+# {{ host }}
+
+define service {
+                use                             relax-service
+                host_name                       {{ host }}
+                service_description             http-f{{ hostvars[host]['SHOT_STORAGE_ID'] }}.s.qip.ru
+                check_command                   check_http_ex!{{ host }}!/server-status-nginx!80
+}
+
+# {{ host }}
+
+{% endfor %}
+

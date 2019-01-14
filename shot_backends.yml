@@ -1,0 +1,10 @@
+---
+
+- name: deploy configration into shot backends servers
+  hosts: shot_backends
+  sudo: yes
+  vars_files:
+    - "group_vars/{{ ansible_system }}.yml"
+  roles:
+    - shot_backends
+

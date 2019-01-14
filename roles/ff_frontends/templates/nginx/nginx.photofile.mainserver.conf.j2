@@ -1,0 +1,599 @@
+{% macro input(upstream="backend",http_port="80",https="1") %}
+server {
+    listen          195.239.111.3:{{ http_port }};
+    listen          195.239.111.33:{{ http_port }};
+{% if https %}
+    listen          195.239.111.3:443 default ssl;
+    listen          195.239.111.33:443 default ssl;
+{% endif %}
+
+    server_name     photo.qip.ru m.photo.qip.ru;
+
+{% if https %}
+    ssl_certificate         /usr/local/nginx/conf/certs/server.crt;
+    ssl_certificate_key     /usr/local/nginx/conf/certs/server.key;
+{% endif %}
+
+    deny 79.175.48.178;
+
+    access_log      {{ LOG_DIR }}/photofile.ru/{{ NGINX_ACCESS_LOG }} reqtimelog;
+#access_log     off;
+    error_log       {{ LOG_DIR }}/photofile.ru/{{ NGINX_ERROR_LOG }};
+
+    proxy_set_header    X-URI           $request_uri;
+    proxy_set_header    X-Forwarded-For $remote_addr;
+    proxy_set_header    X-Original-host $host;
+    proxy_set_header    X-language      $lang;
+    proxy_set_header    X-QIP-GEO       $country;
+    proxy_set_header    X-Host          $host;
+    proxy_set_header    X-Real-IP       $remote_addr;
+
+    error_page  404 /static/404.htm;
+    error_page  502 /static/502.htm;
+    error_page  504 /static/504.htm;
+    error_page  413 = http://photo.qip.ru/_413/;
+    error_page  416 /static/416.htm;
+
+    ssi on;
+
+#DOWN
+#allow 80.68.240.0/20;
+#allow 127.0.0.0/8;
+#allow 195.239.111.0/24;
+#allow 217.172.31.100/32; # rkovrigin
+#deny all;
+#error_page 403 =200 http://maint.photofile.ru/;
+#DOWN
+
+    location ^~ /rb/ {
+        source_charset cp1251;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_pass_request_body off;
+        proxy_pass http://rb;
+        proxy_connect_timeout 1;
+        proxy_read_timeout 1;
+        error_page 302 404 413 502 503 504 = @blank;
+    }
+
+    location @blank {
+        return 204;
+    }
+
+    if ( $uri !~* (\/|\.(php|html?|jpe?g|gif|tiff?|png|css|js|exe|zip|ico|txt|xml|gz|swf|wsdl|htc|cur|eot|svg|ttf|woff|code))$) {
+        rewrite ^(.*) http://$host$1/ permanent;
+    }
+
+    location ~ /.svn/ { deny all; }
+
+    location ~ ^/download/ {
+        access_log {{ LOG_DIR }}/photofile.ru/download_{{ NGINX_ACCESS_LOG }};
+        root /www/photofile.ru/htdocs;
+    }
+
+    location ~ ^/(images|jscript|jslib|static|download|js|themes)/ {
+        rewrite ^/jslib/[0-9]+/(.*) /jslib/$1;
+        rewrite ^/jscript/[0-9]+/(.*) /jscript/$1;
+        rewrite ^/themes/([a-z0-9_-]+)/[0-9]+/(.*) /themes/$1/$2;
+        rewrite ^/images/[0-9]+/(.*) /images/$1;
+        root /www/photofile.ru/htdocs;
+    }
+
+    location = / {
+        if ($args = "from=forum") {
+            rewrite ^/(.*)$ http://file.qip.ru/$1 permanent;
+        }
+
+        if ($query_string ~ "^hnb=1" ) {
+            rewrite ^   /index_no_bnr.html break;
+        }
+
+        if ($host ~ "^photo.qip.ru$" ) {
+            rewrite ^ /index_qip.html break;
+        }
+
+        rewrite     ^   /index.html break;
+#expires 7d;
+        gzip on;
+        root /www/photofile.ru;
+    }
+
+# for fullscreen banner
+    location = /index.html {
+        rewrite ^ /;
+    }
+    location = /index2.html {
+        rewrite ^ /;
+    }
+
+#### mod_accel ####
+    location ^~ /genres {
+        if ($http_cookie !~* "login" ) {
+            proxy_pass http://accel.photofile.ru;
+        }
+        if ($http_cookie ~* "login" ) {
+            proxy_pass http://{{ upstream }};
+        }
+    }
+
+    location ~* ^/(frame|users)/(dr-root|admin|fishki_net|appo|allexius)(/|$) {
+        if ($http_cookie !~* "login" ) {
+            proxy_pass http://accel.photofile.ru;
+        }
+        if ($http_cookie ~* "login" ) {
+            proxy_pass http://{{ upstream }};
+        }
+    }
+
+    location ^~ /simple/frame/fishki_net/ {
+        if ($http_cookie !~* "login" ) {
+            proxy_pass http://accel.photofile.ru;
+        }
+        if ($http_cookie ~* "login" ) {
+            proxy_pass http://{{ upstream }};
+        }
+    }
+
+    location ^~ /albums/all/rss/ {
+        proxy_pass http://accel.photofile.ru;
+    }
+
+    location ~* ^/users/[0-9a-z_\.-]+/[0-9]+/rss/ {
+        proxy_pass http://accel.photofile.ru;
+    }
+
+    location ~* /genres/[0-9]+/rss/ {
+        proxy_pass http://accel.photofile.ru;
+    }
+
+    location ~* ^/users/[0-9a-z_\.-]+/albums/friends/rss/ {
+        proxy_pass http://accel.photofile.ru;
+    }
+
+#### end of mod_accel ####
+
+    location ^~ /google {
+        root /www/photofile.ru/htdocs;
+    }
+
+    location ^~ /yandex {
+        root /www/photofile.ru/htdocs;
+    }
+
+    location = /favicon.ico {
+        root /www/photofile.ru/htdocs;
+    }
+
+    location /blank/ {
+        rewrite ^/blank/ /static/blank.html;
+    }
+
+    location /blog/ {
+        rewrite ^/blog/(.*)$ http://photo.qip.ru/forum/$1 permanent;
+    }
+
+# smotri.com
+    location ^~ /videoclient/xmlrpc/ {
+        proxy_pass http://loadup.ru/api/xmlrpc/;
+    }
+
+    location ^~ /videoclient/json/ {
+        proxy_pass http://loadup.ru/api/json/;
+    }
+
+    location /internal/rb {
+        proxy_set_header X-Real-IP $remote_addr;
+        rewrite /internal/rb/([^/]+) /rb?charset=cp1251&name=$1 break;
+        proxy_pass_request_body off;
+        proxy_pass http://rb;
+        proxy_connect_timeout 1;
+        proxy_read_timeout 1;
+        charset utf-8;
+        error_page 302 404 413 502 503 504 = @blank;
+    }
+
+    location @blank {
+        return 204;
+    }
+
+    location /internal/iframe {
+        proxy_set_header X-Real-IP $remote_addr;
+        rewrite /internal/iframe/([^/]+) /iframe?charset=cp1251&name=$1 break;
+        proxy_pass http://rb;
+        proxy_connect_timeout 1;
+        proxy_read_timeout 1;
+    }
+
+    location / {
+        rewrite ^/albums_new.php$ http://photofile.ru/albums/all/;
+        rewrite ^/genres.php$ http://photofile.ru/genres/;
+        rewrite ^/forgot_password.php$  http://photofile.ru/forgot/;
+        rewrite ^/profile.php$ http://photofile.ru/register/;
+        rewrite /404.htm /static/404.htm;
+        rewrite ^/user/([0-9a-z_\.-]+)/([0-9a-z_\.-]+)/lenta/ http://photofile.ru/user/$1/$2/?mode=large;
+
+#proxy_set_header    Host           $host;
+        proxy_pass http://{{ upstream }};
+    }
+
+
+#PHPDOWN
+#location ~ ^/static/ {
+#       root /www/photofile.ru/htdocs;
+#       allow all;
+#}
+#
+#PHPDOWN
+
+#PHPSIMPLE
+#location ~ ^/simple/frame/fishki_net/[0-9]+/[0-9]+/ {
+#       proxy_pass http://{{ upstream }};
+#       allow all;
+#}
+#PHPSIMPLE
+
+    location ~* ^/photo/fishki_net/.+\.jpg$ {
+        root            /www/tmp/nginx/photofishki;
+        error_page      404 = @fetchphotofishki;
+        error_log       {{ LOG_DIR }}/photofishki_{{ NGINX_ERROR_LOG }} info;
+    }
+
+    location @fetchphotofishki {
+        internal;
+
+        proxy_set_header        Host photofile.ru;
+        proxy_set_header        X-Host $host;
+        proxy_set_header        X-URI $request_uri;
+        proxy_set_header        X-Forwarded-For $remote_addr;
+        proxy_set_header        X-Real-IP $remote_addr;
+
+        proxy_pass http://ff06.photofile.ru;
+        proxy_store on;
+        proxy_store_access user:rw group:rw all:r;
+
+        root /www/tmp/nginx/photofishki;
+    }
+
+    location ~* ^/c?photo/ {
+        proxy_set_header        Host photofile.ru;
+        proxy_set_header        X-URI $request_uri;
+        proxy_set_header        X-Forwarded-For $remote_addr;
+        proxy_set_header        X-Real-IP $remote_addr;
+        proxy_set_header        X-Host $host;
+
+        proxy_max_temp_file_size        0;
+        proxy_buffers                   8 32k;
+        proxy_busy_buffers_size         32k;
+
+        access_log off;
+
+        error_page 404 =404 /images/no_photo.gif;
+        error_page 502 =404 /images/no_photo.gif;
+        error_page 413 = http://photo.qip.ru/_413/;
+
+#PHPDOWN
+#if ($request_uri ~* "^/photo/.+\.(jpe?g|gif|tiff?|png)$" {
+#       allow all;
+#}
+#PHPDOWN
+
+        resolver            195.239.111.160;
+        resolver_timeout        10s;
+
+        if ($request_uri ~* "^/c?photo/([0-9a-z_\.-]+)/" ) {
+        set $username $1.;
+        }
+
+        proxy_pass http://${username}users.photofile.ru${request_uri};
+        }
+
+        location ^~ /contestphotos/ {
+        proxy_pass  http://contest.photofile.ru;
+        }
+
+        location ^~ /uploadcontest/ {
+        proxy_pass  http://contest.photofile.ru;
+        }
+
+# modern uploadexpress
+        location = /express/ {
+            rewrite .* http://express.photofile.ru permanent;
+        }
+
+        location = /expressphoto/ {
+            rewrite .* http://shot.qip.ru permanent;
+        }
+
+        location /uploadexpress/ {
+            rewrite ^(.*)$ /index.php break;
+            proxy_pass http://expressuploader;
+        }
+
+        location ~ "^/expressphoto/[a-z]+/" {
+
+            access_log      {{ LOG_DIR }}/photofile.ru/expressphoto_{{ NGINX_ACCESS_LOG }};
+            error_log       {{ LOG_DIR }}/photofile.ru/expressphoto_{{ NGINX_ERROR_LOG }};
+
+            valid_referers server_names ~.;
+
+            if ($invalid_referer) {
+                rewrite .* http://shot.qip.ru permanent;
+            }
+
+            return 204;
+        }
+
+        location ~ "^/expressphoto/[0-9a-f]{21}[0-9]{11}[0-9]{3}[0-9]{3}/(small/)?[0-9]+\.(jpg|gif|png)" {
+            set $server ex001;
+
+            if ( $request_uri ~ "^/expressphoto/[0-9a-f]{21}[0-9]{11}[0-9]{3}([0-9]{3})" ) {
+                set $server ex$1;
+            }
+
+            limit_except GET {
+                deny all;
+            }
+
+            resolver                    127.0.0.1;
+            resolver_timeout        3s;
+
+            proxy_pass http://$server.photofile.ru$uri;
+        }
+
+        location ^~ /upload/ {
+            error_page 413 = http://photo.qip.ru/_413/;
+            error_log       {{ LOG_DIR }}/photofile.ru/upload_{{ NGINX_ERROR_LOG }} debug;
+            access_log      {{ LOG_DIR }}/photofile.ru/upload_{{ NGINX_ACCESS_LOG }};
+            client_max_body_size    351m;
+#client_header_timeout          10m;
+            client_body_timeout     10m;
+            send_timeout            10m;
+            proxy_send_timeout              10m;
+            proxy_read_timeout              10m;
+
+            proxy_pass http://upload.photofile.ru;
+        }
+
+
+        location ~ ^/paidlinks/.+(/do|/add|/del/[0-9]+|\.(jpe?g|gif|tiff?|png)) {
+            proxy_pass http://contest.photofile.ru;
+        }
+
+        location ~ ^/paidlinks/useradmin/ {
+#proxy_set_header    Host           $host;
+            proxy_pass http://{{ upstream }};
+        }
+
+        location ~ ^/paidlinks/ {
+            auth_basic              "photofile.ru paidlinks";
+            auth_basic_user_file    /www/photofile.ru/.htpasswd-paidlinks;
+#proxy_set_header    Host           $host;
+            proxy_pass http://{{ upstream }};
+        }
+
+        location ^~ /stats/ {
+            proxy_pass http://stats.photofile.ru;
+        }
+
+        location ^~ /admin/ {
+            allow 80.68.240.0/20;
+            allow 195.239.111.252;
+            allow 83.229.209.252;
+            allow 62.122.188.112/32;
+            allow 213.170.119.154/32;
+            allow 176.114.200.181; # Tver
+                allow 194.186.36.0/24; #new rbc proxy ip
+                deny all;
+
+            auth_basic            "photofile.ru admin";
+            auth_basic_user_file  /www/photofile.ru/.htpasswd-admin;
+
+            proxy_set_header    Host admin.photofile.ru;
+            proxy_pass http://int1.photofile.ru:81;
+        }
+
+        location ^~ /sms/ {
+#proxy_set_header    Host           $host;
+            proxy_pass http://{{ upstream }};
+        }
+
+        location ^~ /billing/received/sms/ {
+#proxy_set_header    Host           $host;
+            proxy_pass http://{{ upstream }};
+        }
+
+        location = /static/(photoofday|photoofday_s).jpg {
+#proxy_set_header    Host           $host;
+            proxy_pass http://{{ upstream }};
+        }
+
+        location ^~ /static/cp1251/ {
+            charset windows-1251;
+            root /www/photofile.ru/htdocs;
+        }
+
+        location ^~ /images/fun/ {
+#proxy_set_header    Host           $host;
+            proxy_pass http://{{ upstream }};
+        }
+
+        location /plashko/ {
+            proxy_set_header Host ssi.photo.qip.ru;
+            rewrite ^(.*)$ / break;            
+            proxy_pass http://{{ upstream }};
+        }
+
+        location = /live-32685343.txt {
+            root /www/photofile.ru;
+        }
+
+        location = /live-b481a4ee.txt {
+            root /www/photofile.ru;
+        }
+
+        location = /e2798d9ee5c0af1a195b46f71dda599e.code {
+#                        rewrite ^(.*[^/])$ $1/ permanent;
+            root /www/photofile.ru/htdocs;
+        }
+
+        location /fs/ {
+            set $proxy_host photofile.ru;
+            proxy_set_header Host photofile.ru;
+            proxy_set_header X-Uri $request_uri;
+            proxy_set_header X-Real-IP $remote_addr;
+
+            resolver        195.239.111.160;
+            resolver_timeout 1s;
+            proxy_read_timeout 3600;
+            proxy_connect_timeout 3600;
+
+            if ( $request_uri ~ "^/fs/([0-9]+)" ) {
+                set $proxy_host ff$1.photofile.ru;
+            }
+
+
+            if ( $host ~ "^ff[0-9]+\.photofile\.ru$" ) {
+                return 404;
+            }
+
+            proxy_pass              http://$proxy_host$request_uri;
+        }
+
+        location = /robots.txt {
+            root /www/photofile.ru/htdocs;
+
+            if ( $host = photo.qip.ru ) {
+                rewrite ^/robots.txt$ /robots_qip.txt;
+            }
+        }
+
+        location = /robots_qip.txt {
+            root /www/photofile.ru/htdocs;
+        }
+
+        location = /static/(file_servers_cron|db_servers_cron).png {
+            allow 127.0.0.0/8;
+            allow 195.239.111.223/32;
+            allow 195.239.111.253/32;
+            allow 195.239.111.252/32;
+            allow 195.239.111.252/31;
+            allow 195.239.111.184;
+            allow 80.68.240.0/20;
+            deny all;
+            root /www/photofile.ru/htdocs;
+        }
+}
+
+server {
+    listen          195.239.111.3:{{ http_port }};
+    listen          195.239.111.33:{{ http_port }};
+
+    server_name     search2.photo.qip.ru m.search2.photo.qip.ru search.photo.qip.ru search.foto.qip.ru searchphoto.qip.ru searchfoto.qip.ru photo.search.qip.ru foto.search.qip.ru photosearch.qip.ru fotosearch.qip.ru m.search.photo.qip.ru
+
+        charset         utf-8;
+    access_log          {{ LOG_DIR }}/search2.photo.qip.ru/{{ NGINX_ACCESS_LOG }} reqtimelog;
+    error_log           {{ LOG_DIR }}/search2.photo.qip.ru/{{ NGINX_ERROR_LOG }};
+
+    deny 62.183.82.42;
+
+    proxy_set_header           Host $host;
+    proxy_set_header           X-Forwarded-For $proxy_add_x_forwarded_for;
+
+    location = /ysearch {
+        access_log      {{ LOG_DIR }}/search2.photo.qip.ru/ysearch_{{ NGINX_ACCESS_LOG }} reqtimelog;
+        error_log       {{ LOG_DIR }}/search2.photo.qip.ru/ysearch_{{ NGINX_ERROR_LOG }};
+        allow 195.239.111.31;
+        allow 195.239.111.83;
+        allow 62.141.94.167;
+        allow 195.239.111.44;
+        deny  all;
+        proxy_pass http://ysearch;
+    }
+
+    location ~* ^/static {
+        root /www/search2.photo.qip.ru/root/htdocs;
+    }
+
+    location /plashko/ {
+        proxy_set_header   Host "ssi.photo.qip.ru";
+        rewrite ^(.*)$ / break;            
+        proxy_pass http://{{ upstream }};
+#                        proxy_pass http://ssi.photo.qip.ru;
+    }
+
+    location ~ ^/[^~]+\.(txt|xml|html|htm|ico) {
+        root /www/search2.photo.qip.ru/root/htdocs/static;
+    }
+
+    location ~* ^/(j|c|i)/ {
+        root /www/search2.photo.qip.ru/root/htdocs;
+    }
+
+    location /internal/rb {
+        proxy_set_header X-Real-IP $remote_addr;
+        rewrite /internal/rb/([^/]+) /rb?charset=cp1251&name=$1 break;
+        proxy_pass_request_body off;
+        proxy_pass http://rb;
+        proxy_connect_timeout 1;
+        proxy_read_timeout 1;
+        charset utf-8;
+        error_page 302 404 413 502 503 504 = @blank;
+    }
+
+    location @blank {
+        return 204;
+    }
+
+    location /internal/iframe {
+        proxy_set_header X-Real-IP $remote_addr;
+        rewrite /internal/iframe/([^/]+) /iframe?charset=utf-8&name=$1 break;
+        proxy_connect_timeout 1;
+        proxy_read_timeout 1;
+        proxy_pass http://rb;
+    }
+
+    location / {
+        proxy_set_header                Host $host;
+        rewrite /(.*) /index.php/$1 break;
+        proxy_pass http://search2;
+        proxy_intercept_errors on;
+        ssi on;
+    }
+}
+
+server {
+    listen          195.239.111.3:{{ http_port }};
+    listen          195.239.111.33:{{ http_port }};
+
+    server_name     accel.photofile.ru;
+
+    access_log      {{ LOG_DIR }}/photofile.ru/accel_{{ NGINX_ACCESS_LOG }};
+    error_log       {{ LOG_DIR }}/photofile.ru/accel_{{ NGINX_ERROR_LOG }};
+    charset utf8;
+
+    location / {
+        proxy_pass http://{{ upstream }};
+        proxy_set_header Host accel.photofile.ru;
+        proxy_cache one;
+        proxy_cache_key "$host$request_uri $cookie_accept";
+    }
+}
+
+server {
+    listen          195.239.111.3:{{ http_port }};
+    listen          195.239.111.33:{{ http_port }};
+
+    server_name     ssi.photo.qip.ru;
+
+    access_log      off;
+    error_log       {{ LOG_DIR }}/ssi.photo.qip.ru/{{ NGINX_ERROR_LOG }};
+
+    charset         utf-8;
+    proxy_set_header        Host $host;     
+
+    location / {
+        proxy_pass      http://{{ upstream }};
+        rewrite         .* / break;
+    }
+}
+
+{%- endmacro %}

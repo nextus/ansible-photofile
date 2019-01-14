@@ -1,0 +1,7 @@
+- name: deploy configuration into photofile databases
+  hosts: ff_db
+  sudo: yes
+  vars_files:
+    - "group_vars/{{ ansible_system }}.yml"
+  roles:
+    - ff_db

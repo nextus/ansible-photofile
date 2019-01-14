@@ -1,0 +1,13 @@
+---
+
+- name: Get reverse NS record
+  local_action: shell getent hosts {{ ansible_default_ipv4["address"] }} | awk '{print $2}'
+  register: REVERSE_RECORD
+  tags:
+    - check
+
+- name: Check reverse NS
+  fail: msg="Unappropriated reverse NS"
+  when: "'{{ inventory_hostname }}' != '{{ REVERSE_RECORD.stdout }}'"
+  tags:
+    - check

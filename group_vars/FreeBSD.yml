@@ -1,0 +1,17 @@
+---
+
+CA: /usr/local/share/certs/ca-root-nss.crt
+
+NGINX_CONF_DIR: /usr/local/etc/nginx
+
+NGINX_METHOD: kqueue
+
+APACHE_ROOT_DIR: /usr/local
+
+APACHE_CONF_DIR: ${APACHE_ROOT_DIR}/etc/apache2
+
+APACHE22_CONF_DIR: ${APACHE_ROOT_DIR}/etc/apache22
+
+SUDOERS: /usr/local/etc/sudoers
+
+VCPUS: ${ansible_processor_count}

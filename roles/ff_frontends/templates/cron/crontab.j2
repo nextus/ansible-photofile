@@ -1,0 +1,24 @@
+MAILTO={{ CRON_MAIL }}
+# generate static main index
+*       *       *       *       *       photofile.ru    OUT=/www/photofile.ru/index.html; /usr/bin/wget -qO $OUT.tmp http://photo.qip.ru/index.php && [ -s $OUT.tmp ] && mv $OUT.tmp $OUT
+*       *       *       *       *       photofile.ru    OUT=/www/photofile.ru/index_qip.html; /usr/bin/wget -qO $OUT.tmp 'http://photo.qip.ru/index.php' && [ -s $OUT.tmp ] && mv $OUT.tmp $OUT
+
+# english static index
+*       *       *       *       *       photofile.ru    OUT=/www/photofile.ru/index_en.html; /usr/bin/wget -qO $OUT.tmp 'http://photo.qip.ru/index.php?lang=en' && [ -s $OUT.tmp ] && mv $OUT.tmp $OUT
+
+# generate static main index without banners
+*       *       *       *       *       photofile.ru    OUT=/www/photofile.ru/index_no_bnr.html; /usr/bin/wget -qO $OUT.tmp http://photo.qip.ru/index.php?hnb=1 && [ -s $OUT.tmp ] && mv $OUT.tmp $OUT
+
+*/2     *       *       *       *       photofile.ru /usr/bin/rsync -aq lumen.photofile.ru:/www/photofile.ru/htdocs/static /www/photofile.ru/htdocs/
+
+# style.rbc.ru informer proxy to right block on photofile.ru (5.02.08)
+15      *       *       *       *       photofile.ru    OUT=/www/photofile.ru/htdocs/static/incoming/style_news.js; /usr/bin/wget -qO $OUT.tmp http://static.feed.rbc.ru/rbc/logical/photofile.ru/style_news.js && [ -s $OUT.tmp ] && mv $OUT.tmp $OUT
+
+12      *       *       *       *       photofile.ru /usr/bin/wget -qO /www/photofile.ru/htdocs/static/main_news.xml http://news.qip.ru/rss/news.rss
+
+*/10    *       *       *       *       photofile.ru /usr/bin/wget -qO /www/photofile.ru/htdocs/static/rss/informer_qip.xml http://ru.fishki.net/picsw/informer/informer_qip.xml 
+
+#loading news
+10      *       *       *       *       photofile.ru /usr/bin/wget -qO /www/photofile.ru/htdocs/static/news.html http://photo.qip.ru/news/?noformat
+11      *       *       *       *       photofile.ru /usr/bin/wget -qO /www/photofile.ru/htdocs/static/auto_news.xml http://auto.qip.ru/rss/novelties.xml
+

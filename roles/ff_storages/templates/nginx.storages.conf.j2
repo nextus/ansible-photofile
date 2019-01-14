@@ -1,0 +1,142 @@
+{% include 'templates/banner.j2' %}
+
+server {
+    listen          {{ FF_STORAGE_IP.stdout }}:80;
+
+    server_name     photofile.ru .users.photofile.ru ff{{ FF_STORAGE }}.photofile.ru;
+    set             $domain ff{{ FF_STORAGE }}.photofile.ru;
+
+    access_log      {{ FF_LOGS }}/{{ NGINX_ACCESS_LOG }};
+    error_log       {{ FF_LOGS }}/{{ NGINX_ERROR_LOG }};
+
+    allow all;
+
+    error_page 403  =200 http://photofile.ru/;
+    error_page 404  =404 /images/no_photo.gif;
+    error_page 413  = http://photofile.ru/_413/;
+
+    set $www_root   "/www/$domain/data";
+
+    proxy_set_header                Host $domain;
+    proxy_set_header                X-Forwarded-For $proxy_add_x_forwarded_for;
+    proxy_set_header                X-URI   $request_uri;
+    proxy_set_header                X-Real-IP $remote_addr;
+
+    location ~ /.svn/ { deny all; }
+
+    location /fs/ {
+        proxy_read_timeout 3600;
+        proxy_send_timeout 3600;
+        rewrite ^(.*)$ /service.php$1 break;
+        proxy_pass http://127.0.0.1:80;
+    }
+
+    location /images/ {
+        root /www/$domain/htdocs;
+    }
+
+    location ~* ^/photo/[a-z0-9_-]/[a-z0-9_-][a-z0-9\._-]/[a-z0-9\._-]+.*\.(jpe?g|gif|tiff?|png)$ {
+        if ( $http_referer ~* www.dfhg.info|c1518.drleeuk.com|pp2.mymihost.com|74.55.154.140|208.98.17.139|se.5qqcc.com|se.126wyt.com|sos.77box.com|69.4.239.125|ent.6park.com|uang.dizhi.info|la-forum.org|f.18sp.net|se.5qqcc.com|61.tok77.info|pp2.mymihost.com|61.tok77.net|d.18sp.net|c1518.drleeuk.com|sos.77box.com|74.55.154.140|se.1234cao.com|75.125.41.18|se.caox777.com|1.17xx.info|1.555mi.com|2.psbbs.info|208.101.9.11|210.6.90.226:8002|3.sewowobbs.info|3.xiaoxiao77.com|53cao.921k.com|64.191.64.104|64.191.64.105|66.90.105.184|67.21.95.200|67.213.222.3|69.4.236.205|69.4.239.125|70.85.48.245|74.222.23.198|75.125.227.117|8.bbsps.info|927mm.921k.com|97.126wyt.com|97.163wyt.com|97.700wyt.com|97.haowyt.com|98.126.33.114|a.f5nn.com|a.f6nn.com|a1.pinsix.com|b.cnc.qzone.qq.com|bb.771kk.com|bb.ct.kz|bt.1234bt.com|bt.aisex.com|c.mayaba.com|c1518.drleeuk.com|caox777.com|cn.93bb.info|cn.golcyl.info|d.mayadiy.com|f.bbsnice.com|h.a88a.com|hao.23aabb.com|j.psbbs.info|jj.pin6.biz|l.bbsps.info|ll.pin6.biz|mm.700wyt.com|n.yourmaya.com|nn.7000se.com|pic.360gan.com|se.1234cao.com|se.1234kk.com|se.1234wyt.com|se.126wyt.com|se.15smm.com|se.163wyt.com|se.30sss.com|se.4ffdd.com|se.4qqww.com|se.5qqcc.com|se.5zzxx.com|se.700wyt.com|se.7gghh.com|sex52sex.com|sex52sex.net|sqwyt.88fv.com|t66y.com|tupian.5154bbs.net|www.126wyt.com|www.166pp.com|www.17cmm.com|www.22sese.com|www.345xb.com|www.38sz.info|www.456yin.com|www.567dx.com|www.67gao.com|www.6u666.com|www.78ai.com|www.886pp.com|www.92kkkk.com|www.97rrb.com|www.97wenwen.com|www.ahezi.info|www.caob1.cn|www.city9x.com|www.crqbz.cn|www.dd2xx.com|www.ganwyt.com|www.mmko.info|www.mmpp456.com|www.msngulu.com|www.niwyt.com|www.palacemoon.com|www.sese33.info|www.xmmnnbb.com|www.yuyu511.info|pstang.info|pstang.com|bb2.atbb.jp ) {
+            return 204;
+        }
+        set $i "";
+
+        if ( $http_referer !~* fishki|photofile ) {
+            set $i "a";
+        }
+
+        if ( $request_uri ~* "qiuke88888|lpsjn|james123456|hb888|mc1692|myloveris78|jjpzzh|josephtm|sdffw575g|7september7|lbcjfwf" ) {
+            set $i a$i;
+        }
+
+        if ( $i = "aa" ) {
+            return 204;
+        }
+
+        internal;
+        root $www_root;
+    }
+{% if NGINX_RESIZE == "YES" %}
+    location ~* ^/preview_photo/([a-z0-9_-])/([a-z0-9_-][a-z0-9\._-])/([a-z0-9\._-]+)/([0-9]+)/([a-z_]+)/([0-9]+\.(jpe?g|gif|tiff?|png))$ {
+        internal;
+
+        proxy_pass                  http://127.0.0.1:8081/photo/$1/$2/$3/$4/$5/$6;
+        proxy_intercept_errors      on;
+        proxy_cache                 previews;
+        proxy_cache_key             $host$uri;
+        proxy_cache_valid           200 3h;
+    }
+{% else %}
+    location ~* ^/preview_photo/[a-z0-9_-]/[a-z0-9_-][a-z0-9\._-]/[a-z0-9\._-]+/[0-9]+/[a-z_]+/[0-9]+\.(jpe?g|gif|tiff?|png)$ {
+        internal;
+        error_page 404 = /thumb.php;
+        root $www_root;
+    }
+{% endif %}
+    location ~* ^/photo/[a-z0-9\._-]+/[0-9]+/([a-z_]+/)[0-9]+\.(jpe?g|gif|tiff?|png)$ {
+        if ( $request_uri ~* "^/photo/((([a-z0-9_-])[a-z0-9\._-])[a-z0-9\._-]*)/([0-9]+)/") {
+            set $album_dir $www_root/photo/$3/$2/$1/$4;
+        }
+        if ( !-d $album_dir ) {
+            return 404;
+        }
+
+        set $delflag $album_dir/.deleted;
+        set $secflag $album_dir/.secured;
+
+        if ( -f $delflag ) {
+            return 404;
+        }
+        if ( -f $secflag) {
+            rewrite ^/photo/(.+)$ /image_pass.php?/$1 last;
+        }
+
+        rewrite ^/photo/((([a-z0-9_\.-])[a-z0-9_\.-])[a-z0-9_\.-]*)/([0-9]+/[a-z_]+/.*)$ /preview_photo/$3/$2/$1/$4 last;
+    }
+    location ~* ^/photo/[a-z0-9\._-]+/[0-9]+/[0-9]+\.(jpe?g|gif|tiff?|png)$ {
+        if ( $request_uri ~* "^/photo/((([a-z0-9_-])[a-z0-9\._-])[a-z0-9\._-]*)/([0-9]+)/") {
+            set $album_dir $www_root/photo/$3/$2/$1/$4; 
+        }
+        if ( !-d $album_dir ) {
+            return 404;
+        }
+
+        set $delflag $album_dir/.deleted;
+        set $secflag $album_dir/.secured;
+        set $protected $album_dir/.protected;
+
+        if ( -f $delflag ) {
+            return 404;
+        }
+        if ( -f $secflag) {
+            rewrite ^/photo/(.+)$ /image_pass.php?/$1 last;
+        }
+        if ( -f $protected) {
+            rewrite ^/photo/(.+)$ /image_pass.php?/$1 last;
+        }
+        rewrite ^/photo/((([a-z0-9_\.-])[a-z0-9_\.-])[a-z0-9_\.-]*)/(.*)$ /photo/$3/$2/$1/$4 last;
+    }
+    location /cphoto2 {
+        internal;
+        rewrite ^/cphoto2/((([a-z0-9_\.-])[a-z0-9_\.-])[a-z0-9_\.-]*)/([0-9]+/[a-z_]+/.*)$ /preview_photo/$3/$2/$1/$4 last;
+        rewrite ^/cphoto2/((([a-z0-9_\.-])[a-z0-9_\.-])[a-z0-9_\.-]*)/(.*)$ /photo/$3/$2/$1/$4 last;
+    }
+
+    location / {
+        rewrite ^/photo/([a-zA-Z0-9_\.-]+)/do/(([a-z_0-9]+))/$       /index.php?act=$2&user=$1&action=$3;
+        rewrite ^/photo/(([a-zA-Z0-9_\.-]+))/([0-9]+)/([0-9]+)/do/$     /index.php?user=$1&album=$3&id=$4&do=2;
+        rewrite ^/photo/(([a-zA-Z0-9_\.-]+))/([0-9]+)/do/$                   /index.php?user=$1&album=$3&do=2;
+        rewrite ^/photo/(([a-zA-Z0-9_\.-]+))/do/$                            /index.php?user=$1&do=2;
+        rewrite ^/photo/do/([a-zA-Z0-9_\.-]+)/$                      /index.php?act=$1;
+        rewrite "^/photo/((([a-z0-9_-])[a-z0-9\._-])[a-z0-9\._-]*)/(userpic\..+)$" /photo/$3/$2/$1/$4;
+        rewrite "^/photo/((([a-z0-9_-])[a-z0-9\._-])[a-z0-9\._-]*)(/watermarks/[0-9]+\..+)$" /photo/$3/$2/$1/$4;
+
+        rewrite ^/photo/(small|middle|large|xlarge)/([a-zA-Z0-9_\$-]+)\.(jpg|gif)$ /decode.php?size=$1&code=$2&ext=$3;     
+        rewrite ^/photo/([a-zA-Z0-9_\$-]+)\.(jpg|gif)$ /decode.php?code=$1&ext=$2;
+
+        proxy_pass      http://127.0.0.1:80/;
+
+        error_page 502  http://photofile.ru/502.htm;
+        error_page 504  http://photofile.ru/504.htm;
+    }
+}

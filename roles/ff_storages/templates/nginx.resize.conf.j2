@@ -1,0 +1,65 @@
+server {
+    listen          127.0.0.1:8081;
+   
+    access_log      {{ FF_LOGS }}/resize_{{ NGINX_ACCESS_LOG }};
+    error_log       {{ FF_LOGS }}/resize_{{ NGINX_ERROR_LOG }};
+
+    set $domain     {{ FF_STORAGE_IP.stdout }};
+    set $www_root   /www/$domain/data;
+
+    set_real_ip_from 127.0.0.0/8;
+    image_filter_buffer 10M;
+
+    location ~* ^/photo/([a-z0-9_-])/([a-z0-9_-][a-z0-9\._-])/([a-z0-9_\.-]*)/([0-9]+)/gallery/([0-9]+\.(jpe?g|gif|tiff?|png))$ {
+        alias $www_root/photo/$1/$2/$3/$4/$5;
+        try_files "" @404;
+
+        image_filter resize 236 236;
+        image_filter crop 236 236;
+    }
+
+    location ~* ^/photo/([a-z0-9_-])/([a-z0-9_-][a-z0-9\._-])/([a-z0-9_\.-]*)/([0-9]+)/small/([0-9]+\.(jpe?g|gif|tiff?|png))$ {
+        alias $www_root/photo/$1/$2/$3/$4/$5;
+        try_files "" @404;
+
+        image_filter resize 100 100;
+    }
+
+    location ~* ^/photo/([a-z0-9_-])/([a-z0-9_-][a-z0-9\._-])/([a-z0-9_\.-]*)/([0-9]+)/xmiddle/([0-9]+\.(jpe?g|gif|tiff?|png))$ {
+        alias $www_root/photo/$1/$2/$3/$4/$5;
+        try_files "" @404;
+
+        image_filter resize 150 150;
+    }
+
+    location ~* ^/photo/([a-z0-9_-])/([a-z0-9_-][a-z0-9\._-])/([a-z0-9_\.-]*)/([0-9]+)/cmiddle/([0-9]+\.(jpe?g|gif|tiff?|png))$ {
+        alias $www_root/photo/$1/$2/$3/$4/$5;
+        try_files "" @404;
+
+        image_filter resize 239 239;
+    }
+
+    location ~* ^/photo/([a-z0-9_-])/([a-z0-9_-][a-z0-9\._-])/([a-z0-9_\.-]*)/([0-9]+)/middle/([0-9]+\.(jpe?g|gif|tiff?|png))$ {
+        alias $www_root/photo/$1/$2/$3/$4/$5;
+        try_files "" @404;
+
+        image_filter resize 240 240;
+    }
+
+    location ~* ^/photo/([a-z0-9_-])/([a-z0-9_-][a-z0-9\._-])/([a-z0-9_\.-]*)/([0-9]+)/large/([0-9]+\.(jpe?g|gif|tiff?|png))$ {
+        alias $www_root/photo/$1/$2/$3/$4/$5;
+        try_files "" @404;
+
+        image_filter resize 490 490;
+    }
+
+    location ~* ^/photo/([a-z0-9_-])/([a-z0-9_-][a-z0-9\._-])/([a-z0-9_\.-]*)/([0-9]+)/xlarge/([0-9]+\.(jpe?g|gif|tiff?|png))$ {
+        alias $www_root/photo/$1/$2/$3/$4/$5;
+        try_files "" @404;
+
+        image_filter resize 750 750;
+    }
+
+    location @404 { return 404; }
+}
+

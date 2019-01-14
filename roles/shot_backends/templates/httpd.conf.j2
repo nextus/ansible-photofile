@@ -1,0 +1,136 @@
+{% include 'templates/banner.j2' %}
+
+ServerRoot "{{ APACHE_ROOT_DIR }}"
+PidFile {{ APACHE_PID }}
+Timeout 30
+KeepAlive Off
+StartServers 16
+MinSpareServers 16
+MaxSpareServers 32
+MaxClients 128
+MaxRequestsPerChild 8192
+
+Listen {{ SHOT_BACKEND_IP.stdout }}:80
+Listen {{ SHOT_BACKEND_IP.stdout }}:81
+
+LoadModule authz_host_module modules/mod_authz_host.so
+LoadModule log_config_module modules/mod_log_config.so
+LoadModule mime_magic_module modules/mod_mime_magic.so
+LoadModule mime_module modules/mod_mime.so
+LoadModule status_module modules/mod_status.so
+LoadModule dir_module modules/mod_dir.so
+LoadModule rewrite_module modules/mod_rewrite.so
+LoadModule rpaf_module modules/mod_rpaf-2.0.so
+#LoadModule dav_svn_module     modules/mod_dav_svn.so
+#LoadModule authz_svn_module   modules/mod_authz_svn.so
+LoadModule php5_module modules/libphp5.so
+
+ExtendedStatus On
+User www
+Group www
+ServerAdmin root@itmm.ru
+ServerName {{ inventory_hostname }}
+UseCanonicalName Off
+ServerTokens Prod
+ServerSignature Off
+
+LogLevel warn
+ErrorLog {{ LOG_DIR }}/{{ APACHE_ERROR_LOG }}
+LogFormat "%h %l %u %t \"%r\" %>s %b " common
+
+DefaultType text/plain
+#AddDefaultCharset windows-1251
+
+UseCanonicalName On
+HostnameLookups Off
+
+DocumentRoot "/www/{{ inventory_hostname }}"
+
+<Directory />
+    AllowOverride None
+    Order Deny,Allow
+    Deny from all
+</Directory>
+
+<Directory "/www">
+    Options FollowSymLinks
+    AllowOverride None
+    Order deny,allow
+#    Deny from all
+    Allow from all
+</Directory>
+
+<Files ~ "^\.ht">
+
+    Order allow,deny
+    Deny from all
+</Files>
+
+<IfModule mod_dir.c>
+    DirectoryIndex index.php
+</IfModule>
+
+<IfModule mod_autoindex.c>
+IndexIgnore .??* *~ *# HEADER* README* RCS CVS *,v *,t
+</IfModule>
+
+
+<IfModule mod_mime.c>
+TypesConfig conf/mime.types
+AddType application/x-compress .Z
+AddType application/x-tar .tgz
+AddType application/x-gzip .gz .tgz
+AddType application/x-httpd-php .php
+</IfModule>
+
+<IfModule mod_mime_magic.c>
+MIMEMagicFile conf/magic
+</IfModule>
+
+<IfModule mod_status.c>
+        ExtendedStatus On
+    <Location /server-status>
+        SetHandler server-status
+        Order deny,allow
+        Deny from all
+        Allow from 80.68.252.0/22 80.68.240.0/20 80.68.244.32/27 195.239.111.184/32 195.68.160.213/32
+    </Location>
+</IfModule>
+
+RPAFenable On
+RPAFproxy_ips 127.0.0.1 195.239.111.57 195.239.86.38 195.239.111.204 62.141.94.6 62.141.94.5
+
+NameVirtualHost {{ SHOT_BACKEND_IP.stdout }}:80
+NameVirtualHost {{ SHOT_BACKEND_IP.stdout }}:81
+
+<VirtualHost {{ SHOT_BACKEND_IP.stdout }}:80>
+        ServerName dummy
+        DocumentRoot /www/{{ inventory_hostname }}
+        ErrorDocument 404 /
+</VirtualHost>
+
+<VirtualHost {{ SHOT_BACKEND_IP.stdout }}:81>
+  ServerName shot.qip.ru
+  ServerAlias shot.photo.qip.ru
+  DirectoryIndex index.php index.html index.htm
+
+  DocumentRoot  /www/shot.qip.ru/root/htdocs
+  TransferLog   {{ LOG_DIR }}/shot.qip.ru/{{ APACHE_ACCESS_LOG }}
+  ErrorLog      {{ LOG_DIR }}/shot.qip.ru/{{ APACHE_ERROR_LOG }}
+
+  php_value error_log {{ LOG_DIR }}/php/error_log
+
+  <Directory /www/shot.qip.ru/root/htdocs>
+    Options +Indexes
+    Order Allow,Deny
+    AllowOverride All
+    Allow from all
+
+    RewriteEngine On
+    RewriteBase /
+    RewriteCond %{REQUEST_FILENAME} !-f
+    RewriteCond %{REQUEST_FILENAME} !-d
+    RewriteRule !\.(js|ico|gif|jpg|png|css|txt|xml)$ /index.php
+  </Directory>
+</VirtualHost>
+

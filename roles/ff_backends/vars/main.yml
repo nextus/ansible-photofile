@@ -1,0 +1,6 @@
+---
+
+upstream: backend
+
+http_debug_port: 8081
+

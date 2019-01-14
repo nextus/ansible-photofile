@@ -1,0 +1,8 @@
+#!/usr/bin/env bash
+saveit () {
+    env RSYNC_PASSWORD=hidden rsync -qWaup --safe-links $1 $2
+}
+
+{% for bck in BACKUPS %}
+saveit photofile.ru@fs{{ bck.num }}.jpe.ru::fs{{ bck.num }} /{{ bck.part }}/fs{{ bck.num }}
+{% endfor %}

@@ -1,0 +1,3 @@
+MAILTO={{ CRON_MAIL }}
+0       0       *       *       *       root                /root/bin/mysqlbackup.sh
+0       10      *       *       *       root                /root/bin/check_backup.sh > /tmp/check_backup

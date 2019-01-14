@@ -1,0 +1,476 @@
+########################
+# HOSTGROUP DEFINITION #
+########################
+
+define hostgroup {
+        hostgroup_name  photofile
+        alias           photofile
+        members         {% for host in groups['ff'] %}{{ host }},{% endfor %}cho.photofile.ru,wid.photofile.ru,popugai.relax.ru,fonar.relax.ru,gerakl.relax.ru
+}
+
+####################
+# HOSTS DEFINITION #
+####################
+
+{% for host in groups['ff'] %}
+define host {
+                use                     generic-host
+                host_name               {{ host }}
+                alias                   {{ host }}
+                address                 {{ hostvars[host]["ansible_default_ipv4"]["address"] }}
+}
+
+{% endfor %}
+
+
+define host {
+        use         generic-host
+        host_name       cho.photofile.ru
+        alias           cho.photofile.ru
+        address         195.239.86.22
+}
+
+
+define host {
+        use         generic-host
+        host_name       wid.photofile.ru
+        alias           wid.photofile.ru
+        address         195.239.111.56
+}
+
+
+define host {
+        use         generic-host
+        host_name       popugai.relax.ru
+        alias           popugai.relax.ru
+        address         83.229.209.90
+}
+
+
+define host {
+        use         generic-host
+        host_name       gerakl.relax.ru
+        alias           gerakl.relax.ru
+        address         83.229.209.115
+}
+
+
+define host {
+        use         generic-host
+        host_name       fonar.relax.ru
+        alias           fonar.relax.ru
+        address         83.229.209.177
+}
+
+
+###############################
+# DEFAULT SERVICES DEFINITION #
+###############################
+
+define service {
+                use                             relax-service
+                hostgroup                       photofile
+                service_description             ssh
+                check_command                   check_ssh
+}
+
+define service {
+                use                             relax-service
+                hostgroup                       photofile
+                service_description             CPU and swap
+                check_command                   check_cpuswap_snmp
+}
+
+define service {
+                use                             relax-service
+                hostgroup                       photofile
+                service_description             check_time
+                check_command                   check_time
+}
+
+define service {
+                use                             relax-slow-service
+                hostgroup                       photofile
+                service_description             system_check
+                check_command                   check_snmp_proc
+}
+
+define service {
+                use                             relax-slow-service
+                hostgroup                       photofile
+                service_description             raid
+                check_command                   check_log_snmp!raidmon
+}
+
+#######################
+# SERVICES DEFINITION #
+#######################
+
+
+# PHOTOFILE_FRONTENDS
+
+{% for host in groups['ff_frontends'] %}
+
+# {{ host }}
+define service {
+                use                             relax-service
+                host_name                       {{ host }}
+                service_description             http-photofile.ru
+                check_command                   check_http_ip_ex!proxy{{ hostvars[host]['FF_PROXY_ID'] }}.photofile.ru!photofile.ru!/!80
+}
+
+define service {
+                use                             relax-service
+                host_name                       {{ host }}
+                service_description             dns
+                check_command                   check_dns!{{ host }}!nagios-check.photofile.users.photofile.ru
+}
+define service {
+                use                             relax-service
+                host_name                       {{ host }}
+                service_description             check_traf
+                check_command                   check_snmp_if!{{ hostvars[host]["ansible_default_ipv4"]["interface"] }}!1:50,1:75!1,5!5,10
+}
+# {{ host }}
+
+{% endfor %}
+
+# PHOTOFILE_BACKENDS
+
+{% for host in groups['ff_backends'] %}
+
+# {{ host }}
+define service {
+                use                             relax-slow-service
+                host_name                       {{ host }}
+                service_description             http-{{ hostvars[host]['FF_BACKEND'] }}
+                check_command                   check_http_ex!{{ hostvars[host]['FF_BACKEND'] }}!/!80
+}
+
+define service {
+                use                             relax-slow-service
+                host_name                       {{ host }}
+                service_description             http-photo.qip.ru
+                check_command                   check_http_ex!photo.qip.ru!/!808{{ loop.index }}
+}
+
+define service {
+                use                             relax-service
+                host_name                       {{ host }}
+                service_description             smtp
+                check_command                   check_smtp
+}
+
+define service {
+                use                             relax-service
+                host_name                       {{ host }}
+                service_description             memcached-auth
+                check_command                   check_tcp!11213
+}
+
+define service {
+                use                             relax-service
+                host_name                       {{ host }}
+                service_description             memcached-auth-hit
+                check_command                   check_memcached_hit_custom!{{ host }}:11213
+}
+# {{ host }}
+
+{% endfor %}
+
+# PHOTOFILE_MEMCACHED
+
+{% for host in groups['ff_memcaches'] %}
+
+# {{ host }}
+define service {
+                use                             relax-service
+                host_name                       {{ host }}
+                service_description             memcached
+                check_command                   check_tcp!{{ hostvars[host]['MEMCACHED_PORT'] }}
+}
+
+define service {
+                use                             relax-service
+                host_name                       {{ host }}
+                service_description             memcached-hit
+                check_command                   check_memcached_hit_custom!{{ host }}:{{ hostvars[host]['MEMCACHED_PORT'] }}
+}
+# {{ host }}
+
+{% endfor %}
+
+# PHOTOFILE_STORAGES
+
+{% for host in groups['ff_storages'] %}
+
+# {{ host }}
+define service {
+                use                             relax-service
+                host_name                       {{ host }}
+                service_description             http-ff{{ hostvars[host]['FF_STORAGE'] }}
+                check_command                   check_http_ex!{{ host }}!/monitoring!80
+}
+# {{ host }}
+
+{% endfor %}
+
+# gerakl.itmm.ru
+define service {
+                use                             relax-service
+                host_name                       gerakl.relax.ru
+                service_description             http-ff83
+                check_command                   check_http_ex!gerakl.relax.ru!/monitoring!80
+}
+# gerakl.itmm.ru
+
+# gastronom.itmm.ru
+define service {
+                use                             relax-service
+                host_name                       gerakl.relax.ru
+                service_description             http-ff54
+                check_command                   check_http_ex!gastronom.relax.ru!/monitoring!80
+}
+# gastronom.itmm.ru
+
+# fonar.itmm.ru
+define service {
+                use                             relax-service
+                host_name                       fonar.relax.ru
+                service_description             http-ff94
+                check_command                   check_http_ex!fonar.relax.ru!/monitoring!80
+}
+# fonar.relax.ru
+
+# kong.itmm.ru
+define service {
+                use                             relax-service
+                host_name                       fonar.relax.ru
+                service_description             http-ff102
+                check_command                   check_http_ex!kong.relax.ru!/monitoring!80
+}
+# kong.itmm.ru
+
+# popugai.itmm.ru
+define service {
+                use                             relax-service
+                host_name                       popugai.relax.ru
+                service_description             http-ff81
+                check_command                   check_http_ex!popugai.relax.ru!/monitoring!80
+}
+# popugai.itmm.ru
+
+# PHOTOFILE_DB
+
+#lux.photofile.ru
+define service {
+                use                             relax-service
+                host_name                       lux.relax.ru
+                service_description             mysql
+                check_command                   check_mysql_port!3306
+}
+
+define service {
+                use                             relax-service
+                host_name                       lux.relax.ru
+                service_description             mysql_repl
+                check_command                   check_mysql_repl2_ex!mysql20.photofile.ru!100!400!3306
+}
+
+define service {
+                use                             relax-service
+                host_name                       lux.relax.ru
+                service_description             mysql2
+                check_command                   check_mysql_port!3307
+}
+define service {
+                use                             relax-service
+                host_name                       lux.relax.ru
+                service_description             mysql3
+                check_command                   check_mysql_port!3308
+}
+define service {
+                use                             relax-service
+                host_name                       lux.relax.ru
+                service_description             mysql4
+                check_command                   check_mysql_port!3309
+}
+define service {
+                use                             relax-service
+                host_name                       lux.relax.ru
+                service_description             mysql5
+                check_command                   check_mysql_port!3310
+}
+define service {
+                use                             relax-service
+                host_name                       lux.relax.ru
+                service_description             mysql6
+                check_command                   check_mysql_port!3311
+}
+#lux.photofile.ru
+
+#volt.photofile.ru
+define service {
+                use                             relax-service
+                host_name                       volt.relax.ru
+                service_description             mysql
+                check_command                   check_mysql_port!3306
+}
+define service {
+                use                             relax-service
+                host_name                       volt.relax.ru
+                service_description             mysql_repl
+                check_command                   check_mysql_repl2_ex!mysql21.photofile.ru!100!400!3306
+}
+define service {
+                use                             relax-service
+                host_name                       volt.relax.ru
+                service_description             mysql2
+                check_command                   check_mysql_port!3307
+}
+define service {
+                use                             relax-service
+                host_name                       volt.relax.ru
+                service_description             mysql_repl2
+                check_command                   check_mysql_repl2_ex!mysql21.photofile.ru!100!400!3307
+}
+define service {
+                use                             relax-service
+                host_name                       volt.relax.ru
+                service_description             mysql3
+                check_command                   check_mysql_port!3308
+}
+define service {
+                use                             relax-service
+                host_name                       volt.relax.ru
+                service_description             mysql_repl3
+                check_command                   check_mysql_repl2_ex!mysql21.photofile.ru!100!400!3308
+}
+define service {
+                use                             relax-service
+                host_name                       volt.relax.ru
+                service_description             mysql4
+                check_command                   check_mysql_port!3309
+}
+define service {
+                use                             relax-service
+                host_name                       volt.relax.ru
+                service_description             mysql_repl4
+                check_command                   check_mysql_repl2_ex!mysql21.photofile.ru!100!400!3309
+}
+define service {
+                use                             relax-service
+                host_name                       volt.relax.ru
+                service_description             mysql5
+                check_command                   check_mysql_port!3310
+}
+define service {
+                use                             relax-service
+                host_name                       volt.relax.ru
+                service_description             mysql_repl5
+                check_command                   check_mysql_repl2_ex!mysql21.photofile.ru!100!400!3310
+}
+define service {
+                use                             relax-service
+                host_name                       volt.relax.ru
+                service_description             mysql6
+                check_command                   check_mysql_port!3311
+}
+define service {
+                use                             relax-service
+                host_name                       volt.relax.ru
+                service_description             mysql_repl6
+                check_command                   check_mysql_repl2_ex!mysql21.photofile.ru!100!400!3311
+}
+#volt.photofile.ru
+
+#chaos.photofile.ru
+define service {
+                use                             relax-service
+                host_name                       chaos.relax.ru
+                service_description             mysql
+                check_command                   check_mysql_port!3306
+}
+
+define service {
+                use                             relax-service
+                host_name                       chaos.relax.ru
+                service_description             mysql_repl
+                check_command                   check_mysql_repl2_ex!mysql2.photofile.ru!100!400!3306
+}
+
+define service {
+                use                             relax-service
+                host_name                       chaos.relax.ru
+                service_description             mysql2
+                check_command                   check_mysql_port!3307
+}
+
+define service {
+                use                             relax-service
+                host_name                       chaos.relax.ru
+                service_description             mysql3
+                check_command                   check_mysql_port!3308
+}
+#chaos.photofile.ru
+
+#amber.photofile.ru
+define service {
+                use                             relax-service
+                host_name                       amber.relax.ru
+                service_description             mysql
+                check_command                   check_mysql_port!3306
+}
+
+define service {
+                use                             relax-service
+                host_name                       amber.relax.ru
+                service_description             mysql2
+                check_command                   check_mysql_port!3307
+}
+define service {
+                use                             relax-service
+                host_name                       amber.relax.ru
+                service_description             mysql_repl2
+                check_command                   check_mysql_repl2_ex!mysql7.photofile.ru!100!400!3307
+}
+define service {
+                use                             relax-service
+                host_name                       amber.relax.ru
+                service_description             mysql3
+                check_command                   check_mysql_port!3308
+}
+
+#amber.photofile.ru
+
+
+#wid.photofile.ru
+define service {
+                use                             relax-service
+                host_name                       wid.photofile.ru
+                service_description             http-photo_proxy
+                check_command                   check_http_ex!wid.relax.ru!/monitoring!80
+}
+
+define service {
+                use                             relax-service
+                host_name                       wid.photofile.ru
+                service_description             http-my.photofile.ru
+                check_command                   check_http_ip_ex!my.photofile.ru!my.photofile.ru!/test.php!80
+}
+define service {
+                use                             relax-service
+                host_name                       wid.photofile.ru
+                service_description             smtp
+                check_command                   check_tcp!25
+}
+#wid.photofile.ru
+
+#cho.photofile.ru
+define service {
+                use                             relax-service
+                host_name                       cho.photofile.ru
+                service_description             http
+                check_command                   check_http_ex!cho.photofile.ru!/monitoring!80
+}
+#cho.photofile.ru

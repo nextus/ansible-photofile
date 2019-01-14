@@ -1,0 +1,7 @@
+---
+
+- name: restart xinetd
+  service: name=xinetd state=restarted
+
+- name: reload nginx
+  service: name=nginx state=reloaded

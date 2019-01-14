@@ -1,0 +1,24 @@
+# rsyncd.conf - Example file, see rsyncd.conf(5)
+#
+
+# Set this if you want to stop rsync daemon with rc.d scripts
+pid file = /var/run/rsyncd.pid
+
+# Edit this file before running rsync daemon!!
+
+uid = fstorage
+gid = w3fstorage
+use chroot = no
+#max connections = 4
+#syslog facility = local5
+
+{% for prt in FS %}
+[fs{{ prt.num }}]
+path = /{{ prt.part }}/fs{{ prt.num }}/
+read only = yes
+dont compress = *.*
+hosts allow ={% for subnet in SUBNETS %} {{ subnet }}{% endfor %}
+
+secrets file = /etc/rsyncd.secrets
+auth users = photofile.ru
+{% endfor %}

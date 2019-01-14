@@ -1,0 +1,7 @@
+- name: deploy configuration into photofile storages
+  hosts: ff_storages
+  sudo: yes
+  vars_files:
+    - "group_vars/{{ ansible_system }}.yml"
+  roles:
+    - ff_storages

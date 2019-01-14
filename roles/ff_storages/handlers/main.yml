@@ -1,0 +1,13 @@
+---
+
+- name: reload nginx
+  service: name=nginx state=reloaded
+
+- name: reload httpd2
+  service: name=apache2 state=reloaded
+
+- name: reload httpd22
+  service: name=apache22 state=reloaded
+
+- name: restart rsyncd
+  service: name=rsyncd state=restarted

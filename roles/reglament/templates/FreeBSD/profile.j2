@@ -1,0 +1,37 @@
+# $FreeBSD: src/etc/profile,v 1.14.30.2.4.1 2010/12/21 17:09:25 kensmith Exp $
+#
+# System-wide .profile file for sh(1).
+#
+# Uncomment this to give you the default 4.2 behavior, where disk
+# information is shown in K-Blocks
+# BLOCKSIZE=K; export BLOCKSIZE
+#
+# For the setting of languages and character sets please see
+# login.conf(5) and in particular the charset and lang options.
+# For full locales list check /usr/share/locale/*
+# You should also read the setlocale(3) man page for information
+# on how to achieve more precise control of locale settings.
+#
+# Check system messages
+# msgs -q
+# Allow terminal messages
+# mesg y
+
+{% include 'templates/banner.j2' %}
+
+if [ "`id -gn`" = "`id -un`" -a `id -u` -gt 1023 ]; then
+        umask 002
+else
+        umask 022
+fi
+
+export LC_CTYPE=ru_RU.CP1251
+export LC_COLLATE=ru_RU.CP1251
+
+export FTP_PASSIVE_MODE=yes
+
+export WRKDIRPREFIX=/usr/local/ports/work
+export PKG_PATH=/usr/ports/packages
+export PORTS_DBDIR=/usr/local/ports
+export DISTDIR=/usr/local/ports/distfiles
+

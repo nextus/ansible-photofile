@@ -1,0 +1,87 @@
+---
+
+###############
+# ff_storages #
+###############
+
+# FIXME: put the host and pass to var file when the bug https://github.com/ansible/ansible/issues/3467 will be fixed
+- name: Get storage number from database
+  local_action: shell mysql --skip-column-names -e "SELECT server_num FROM file_server WHERE name='{{ ansible_hostname }}' ORDER BY root_folder" -h mysql2.photofile.ru -u photofile_slave -p'N3)aSn!u' app_system
+  register: FF_STORAGES
+  when: "'ff_storages' in group_names"
+  changed_when: False
+  always_run: yes
+  tags:
+    - www
+    - apache
+    - nginx
+    - ff_scripts
+
+- name: Get storage number from database
+  local_action: shell mysql --skip-column-names -e "SELECT root_folder FROM file_server WHERE name='{{ ansible_hostname }}' ORDER BY root_folder" -h mysql2.photofile.ru -u photofile_slave -p'N3)aSn!u' app_system
+  register: FF_ROOT_FOLDER
+  when: "'ff_storages' in group_names"
+  changed_when: False
+  always_run: yes
+  tags:
+    - www
+    - apache
+    - nginx
+    - ff_scripts
+
+# FIXME: precedence by server_num may not point to STORAGE partition type
+- name: Set first server_num as STORAGE
+  set_fact: FF_STORAGE="{{ FF_STORAGES.stdout_lines[0] }}"
+  when: "'ff_storages' in group_names"
+  tags:
+    - www
+    - apache
+    - nginx
+    - ff_scripts
+
+- fail: msg="Couldn't found storage number in database by hostname"
+  when: "'ff_storages' in group_names and FF_STORAGE == ''"
+  tags:
+    - www
+    - apache
+    - nginx
+    - ff_scripts
+
+- name: Resolve storage number to IP address
+  local_action: shell getent hosts ff{{ FF_STORAGE }}.photofile.ru | head -1 | cut -d' ' -f1
+  register: FF_STORAGE_IP
+  when: "'ff_storages' in group_names"
+  changed_when: False
+  always_run: yes
+  tags:
+    - www
+    - apache
+    - nginx
+    - ff_scripts
+
+- name: Create group for photofile.ru user
+  group: name=w3photofile state=present
+
+- name: Create specific user for service purpose
+  user: name=photofile.ru createhome=yes shell=/bin/bash comment="service login for photofile.ru" group=w3photofile
+  when: ansible_distribution == "CentOS"
+
+- name: Create specific user for service purpose
+  user: name=photofile.ru createhome=yes shell=/bin/sh comment="service login for photofile.ru" group=w3photofile
+  when: ansible_distribution == "FreeBSD"
+
+- name: Set public key for photofile.ru user
+  authorized_key: user=photofile.ru key="ssh-dss AAAAB3NzaC1kc3MAAACBALE66W1dpyrXreGPgsa9FvrFQKgYGAGrRLGCOxLsl8bP3YAKOWi4Y+hsglFNli00eHpVFDyV9NEssmlq+G1mtKgXSQXcQzT/VRxQX8XLtp5RSKwWPKnqQo5+wIBCBIM+XeNqNFYLtzlrD6h63SJhShrqqe2kpbTXCVvHHEiZKnJXAAAAFQCX0zMSo5cz0x7Cl4ivm0cskvy4YwAAAIA5r9lS7qyFwglxB8OuI+1yXBGXdmldPaS0ol58/h3iWFNi7I74UGwbvQwdNri/0z4Yke6HbKR8VxSz7DoGeVt7ZN/4xWu7tyQfc24+tyXeP+052ldIo9CgRPwgMBBqD4B/totEa/O4sMPSKT5Vl6aFR/AydaNwa3o0j+hnlAPVyAAAAIAUAzZlwJhvstHr5gkfhcpd7W10g0tBGgN/4K0Lm1bRpZUP/Y1/JuXrpeWwwyIkMDdff1goWTRS+3/M/WSOCmi03yEgUIPT5sw7Qjpyc0rgHflaNRbee89TMOvwVGd9frwVqCjrcmH0onbgOdLNvl3TkCNtPpG7slBqZOtAwpgPDg== photofile.ru@nicho.photofile.ru"
+  tags:
+    - ssh
+
+- name: Set public key for photofile.ru user
+  authorized_key: user=photofile.ru key="ssh-dss AAAAB3NzaC1kc3MAAACBANnvE7ciS4cMXy0FCdQb1c7x5AnKA3WxOKMd0960SPGLy6+4WYE83pV44w9cmdZvyqfhrKA8DH6V1SERWlMuC775TrR35Y2Dzzgi+i23xsux5AbbfMoOGM2javHrafyamvmc0kBQQ9ib0q6fl2AHcDOkCagLYkuCPEMEhywPp303AAAAFQDSntn++lbyBsXuVYvLiQq7FicY2QAAAIA2wyjspLL1Bjviaa4N/hlXmJD0bHv1J9BAZ+soZcwLbA9Khl/54GvHwD2QhIjKfW3T0ukKCQUXSCBJP4v1MgtZidISwdCdkuADs4kd/R6lw4L1143e/kMdgqiqMQtsRNz161vIJV585/uMJdZHiuZfhff1QpmVmLqzdF440dCjuwAAAIEA1UJ417nGu9eLiaTHHYrT52KOD9R62xbY+y2xFdiW7bHQ6mkPizR41n3QUAHkJnqjNffxZT7i8R5lUNwI7awiwcSx5QfdqxtgfXC9VCqwwvWMaUSuyMBpzYS6wLinMHRJUNh4XjIZKQVe0pCNDq2mlir015IkP9Agx30JdWauPG4= photofile.ru@plukyanchuk.dev.photofile.ru"
+  tags:
+    - ssh
+
+- name: Set public key for photofile.ru user
+  authorized_key: user=photofile.ru key="ssh-dss AAAAB3NzaC1kc3MAAACBAJX7Ngxg496Hr0HFsY0mY2z25Pt+mtXcDIbV0vs0avU2sUkVw45RkeHhgK4Vpf0sQY0cs0NBuZyvO4YItOn5+wKkw7bFiYYRZ8Y9/CBXSCxF93QUqCqINEKngkw7t449ND8ptoAOwj8AXmMOVaMExoTsNr+GgVZzIQG9eoWEFupbAAAAFQCSDiYwwpnTFM7JTT6X11oTBZ3beQAAAIAdDU1G0gL/TCTtNYubpNneI2lrFP/Ywi/4gpMBfVT+OHdBSpmDQOma1k/rlChUzGI6sW6esdey9wqH1kkJW8PSvI/7S+45SCKSBZjyqpI5M5WLZ4XyEZ12LruMEovjs9HDh7HoFxv7lLw6mYYz2FJcHv9EmdAChgV3Eho/W5Y/dwAAAIAWtLixQ2/yBLB3t3GDYdVB7MrfAZHL76sYTfBDGBr8wyNyhPA4A5UPTnQ9L+hrHtcWdfpe3bB+pwKNe8jNpg6dR4IveH78s1rvPdL7FrdNr5MPV0Q0f6xGuNrU8aMAG5oqT75WnCExVOvUMEQtZOEeTdl6bEg16pkcpEP5zZGDbQ== plukyanchuk@dev2.pochta.ru"
+  tags:
+    - ssh
+

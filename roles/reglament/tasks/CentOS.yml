@@ -1,0 +1,317 @@
+---
+
+- name: Set hostname
+  lineinfile: dest=/etc/sysconfig/network regexp='^(\s)*HOSTNAME=' line='HOSTNAME={{ inventory_hostname }}' state=present
+  notify: update hostname
+  tags:
+    - hostname
+
+# YUM
+- name: Download reglament CentOS-Base repository
+  get_url: force=yes url="https://mnt.itmm.ru/pub/conf-reglament/Linux/Centos5-Base.repo" dest=/etc/yum.repos.d/CentOS-Base.repo mode=644 owner=root group=wheel
+  when: ansible_distribution_version.split('.')[0]|int == 5
+
+- name: Download reglament CentOS-Base repository
+  get_url: force=yes url="https://mnt.itmm.ru/pub/conf-reglament/Linux/Centos6-Base.repo" dest=/etc/yum.repos.d/CentOS-Base.repo mode=644 owner=root group=wheel
+  when: ansible_distribution_version.split('.')[0]|int == 6
+
+- name: Install EPEL repo
+  yum: name=http://mirror.yandex.ru/epel/5/x86_64/epel-release-5-4.noarch.rpm state=present
+  when: ansible_distribution_version.split('.')[0]|int == 5
+
+- name: Install EPEL repo
+  yum: name=http://mirror.yandex.ru/epel/6/x86_64/epel-release-6-8.noarch.rpm state=present
+  when: ansible_distribution_version.split('.')[0]|int == 6
+
+- name: Disable fastest mirror
+  lineinfile: dest=/etc/yum/pluginconf.d/fastestmirror.conf regexp='^enabled=' line='enabled=0' state=present
+  ignore_errors: True
+# YUM
+
+- name: Install reglament soft
+  yum: name={{ item }} state=present
+  with_items:
+    - rsync
+    - xinetd
+    - sysstat
+    - atop
+    - htop
+    - iotop
+    - postfix
+    - tcpdump
+    - OpenIPMI-tools
+    - logwatch
+    - telnet
+    - cvs
+    - ntp
+    - net-snmp
+    - screen
+    - strace
+    - mtr
+    - mc
+    - csh
+    - irqbalance
+    - lm_sensors
+  tags:
+    - snmpd
+    - postfix
+
+- name: Deny users crontab
+  copy: content= dest=/etc/cron.allow owner=root group=wheel mode=644 force=no
+
+- name: Disable builtin raid check job
+  lineinfile: dest=/etc/sysconfig/raid-check regexp='^[#]*ENABLED=' line="ENABLED=no" state=present
+  ignore_errors: True
+
+- name: Disable prelink mechanism
+  lineinfile: dest=/etc/sysconfig/prelink regexp='^[#]*PRELINKING=' line="PRELINKING=no" state=present
+  notify: reload prelink
+
+# SELinux
+- name: Disable SELinux mode permanently
+  lineinfile: dest={{ item }} regexp='^[#]*SELINUX=' line="SELINUX=disabled" state=present
+  with_items:
+    - /etc/sysconfig/selinux
+    - /etc/selinux/config
+
+- name: Disable SELinux in current boot
+  command: setenforce 0
+  when: ansible_selinux == True
+# SELinux
+
+# NTPD
+- name: Download ntpd configuration
+  get_url: force=yes url="https://mnt.itmm.ru/pub/conf-reglament/Linux/ntp.conf" dest=/etc/ntp.conf mode=644 owner=root group=wheel
+  notify: restart ntp
+
+- name: Autostart ntpd at boot time
+  service: name=ntpd enabled=yes
+  ignore_errors: yes
+# NTPD
+
+- name: Disable refill /etc/resolv.conf file during boot
+  lineinfile: dest="/etc/sysconfig/network-scripts/ifcfg-{{ ansible_default_ipv4['interface'] }}" regexp='^DNS[0-9]+=' state=absent
+
+- name: Do not require tty for sudo commands for mnt user
+  lineinfile: dest=/etc/sudoers regexp='^[#]*Defaults\s+requiretty' line='#Defaults    requiretty' state=present
+
+- name: Download /etc/sysconfig/i18n
+  get_url: force=yes url="https://mnt.itmm.ru/pub/conf-reglament/Linux/i18n" dest=/etc/sysconfig/i18n mode=644 owner=root group=wheel
+
+- name: Download /etc/csh.cshrc
+  get_url: force=yes url="https://mnt.itmm.ru/pub/conf-reglament/Linux/csh.cshrc" dest=/etc/csh.cshrc mode=644 owner=root group=wheel
+
+- name: Download rc.local
+  get_url: force=yes url="https://mnt.itmm.ru/pub/conf-reglament/Linux/rc.local" dest=/etc/rc.d/rc.local mode=755 owner=root group=wheel
+
+# rsyslog
+- name: Create directory for rsyslog spool
+  file: path=/logs/rsyslog owner=root group=wheel mode=0775 state=directory
+  tags:
+    - rsyslog
+
+- name: Install tls support for rsyslog
+  yum: name=rsyslog5-gnutls state=latest
+  notify: restart rsyslog
+  when: ansible_distribution_version.split('.')[0]|int == 5
+  tags:
+    - rsyslog
+
+- name: Install tls support for rsyslog
+  yum: name=rsyslog-gnutls state=latest
+  notify: restart rsyslog
+  when: ansible_distribution_version.split('.')[0]|int == 6
+  tags:
+    - rsyslog
+
+- name: Depoloy rsyslog config
+  template: src=rsyslog.conf.j2 dest=/etc/rsyslog.conf
+  notify: restart rsyslog
+  tags:
+    - rsyslog
+
+- name: Disable syslog
+  service: name=syslog enabled=no state=stopped
+  ignore_errors: yes
+  when: ansible_distribution_version.split('.')[0]|int == 5
+  tags:
+    - rsyslog
+
+- name: Autostart rsyslog at boot time
+  service: name=rsyslog enabled=yes state=started
+  ignore_errors: yes
+  tags:
+    - rsyslog
+# rsyslog
+
+# logrotate
+- name: Set logrotate to daily duty
+  lineinfile: dest=/etc/logrotate.conf regexp='^(weekly|daily)' line='daily' state=present
+  tags:
+    - rsyslog
+
+- name: Deploy logrotate rules
+  template: src=Linux/logrotate.{{ item }}.j2 dest=/etc/logrotate.d/{{ item }} backup=no owner=root group=wheel mode=0444
+  with_items:
+    - nginx
+    - apache
+  tags:
+    - rsyslog
+# logrotate
+
+# boot-notify
+- name: Download boot-notify script
+  get_url: force=yes url="https://mnt.itmm.ru/pub/boot-notify" dest=/etc/init.d/boot-notify mode=755 owner=root group=wheel
+
+- name: Autostart boot-notify at boot time
+  service: name=boot-notify enabled=yes
+  ignore_errors: yes
+# boot-notify
+
+# Logwatch
+- name: Logwatch configuration
+  get_url: force=yes url="https://mnt.itmm.ru/pub/conf-reglament/Linux/{{ item }}" dest="/etc/logwatch/conf/{{ item }}" mode=644 owner=root group=wheel
+  with_items:
+    - logwatch.conf
+    - ignore.conf
+
+- name: Logwatch services configuration
+  get_url: force=yes url="https://mnt.itmm.ru/pub/conf-reglament/Linux/sshd.conf" dest="/etc/logwatch/conf/services/sshd.conf" mode=644 owner=root group=wheel
+# Logwatch
+
+# Sysctl
+- name: Set reglament sysctl vars
+  copy: src=sysctl.conf.5 dest=/etc/sysctl.conf mode=444 owner=root group=wheel backup=no
+  when: ansible_distribution_version.split('.')[0]|int == 5
+  notify: reload sysctl
+
+- name: Set reglament sysctl vars
+  copy: src=sysctl.conf.6 dest=/etc/sysctl.conf mode=444 owner=root group=wheel backup=no
+  when: ansible_distribution_version.split('.')[0]|int == 6
+  notify: reload sysctl
+# Sysctl
+
+# LADVD
+- name: Download appropriate ladvd blob
+  get_url: force=yes url="https://mnt.itmm.ru/pub/conf-reglament/Linux/ladvd-centos5-{{ ansible_machine }}" dest=/root/bin/ladvd mode=700 owner=root group=wheel
+  when: ansible_distribution_version.split('.')[0]|int == 5
+  notify: restart ladvd
+
+- name: Download appropriate ladvd blob
+  get_url: force=yes url="https://mnt.itmm.ru/pub/conf-reglament/Linux/ladvd-centos6-{{ ansible_architecture }}" dest=/root/bin/ladvd mode=700 owner=root group=wheel
+  when: ansible_distribution_version.split('.')[0]|int == 6
+  notify: restart ladvd
+
+- name: Download init.d script for ladvd
+  get_url: force=yes url="https://mnt.itmm.ru/pub/conf-reglament/Linux/ladvd.sh" dest=/etc/init.d/ladvd mode=700 owner=root group=wheel
+  notify: restart ladvd
+
+- name: Download config for ladvd
+  get_url: force=yes url="https://mnt.itmm.ru/pub/conf-reglament/Linux/ladvd-options" dest=/etc/sysconfig/ladvd mode=600 owner=root group=wheel
+  notify: restart ladvd
+
+- name: Autostart ladvd at boot time
+  service: name=ladvd enabled=yes
+  ignore_errors: yes
+# LADVD
+
+- name: Download disk_iostat.pl
+  get_url: force=yes url="https://mnt.itmm.ru/pub/conf-reglament/Linux/disk_iostat.pl" dest=/root/bin/disk_iostat.pl mode=755 owner=root group=wheel
+
+- name: Deploy check_conntrack.sh
+  copy: src=check_conntrack.sh dest=/root/bin/check_conntrack.sh owner=root group=wheel mode=755 force=yes
+
+# Postfix
+- name: Install postfix
+  yum: name=postfix state=present
+  tags:
+    - mail
+
+- name: Deploy postfix config
+  template: src=Linux/postfix-main.cf.j2 dest=/etc/postfix/main.cf backup=yes owner=root group=wheel mode=0444
+  notify: reload postfix
+  tags:
+    - mail
+
+- name: Set postfix as default MTA
+  command: /usr/sbin/update-alternatives --set mta /usr/sbin/sendmail.postfix
+  changed_when: False
+  tags:
+    - mail
+
+- name: Enable postfix
+  service: name=postfix enabled=yes state=started
+  ignore_errors: yes
+  tags:
+    - mail
+# Postfix
+
+# named
+- name: Install named
+  yum: name=bind-utils state=present
+  when: CACHED_BIND == "YES"
+  tags:
+    - bind
+
+- name: Download named config
+  get_url: force=yes url="https://mnt.itmm.ru/pub/conf-reglament/Linux/named.conf.5-9.3" dest=/etc/named.conf mode=444 owner=root group=wheel
+  notify: restart bind
+  when: CACHED_BIND == "YES" and ansible_distribution_version.split('.')[0]|int == 5
+  tags:
+    - bind
+
+- name: Download named config
+  get_url: force=yes url="https://mnt.itmm.ru/pub/conf-reglament/Linux/named.conf.6-9.7" dest=/etc/named.conf mode=444 owner=root group=wheel
+  notify: restart bind
+  when: CACHED_BIND == "YES" and ansible_distribution_version.split('.')[0]|int == 6
+  tags:
+    - bind
+
+- name: Save entropy for named
+  command: /usr/sbin/rndc-confgen -b512 -a -r /dev/urandom creates=/etc/rndc.key
+  notify: restart bind
+  when: CACHED_BIND == "YES"
+  tags:
+    - bind
+
+- name: Set permissions for rndc.key
+  file: path=/etc/rndc.key owner=root group=named mode=0440 state=file
+  when: CACHED_BIND == "YES"
+  tags:
+    - bind
+
+- name: Only IPv4
+  lineinfile: dest=/etc/sysconfig/named regexp='^(\s)*OPTIONS=' line='OPTIONS="-4"' state=present
+  notify: restart bind
+  when: CACHED_BIND == "YES"
+  tags:
+    - bind
+  
+- name: Autostart bind
+  service: name=named enabled=yes
+  when: CACHED_BIND == "YES"
+  tags:
+    - bind
+
+- name: Run bind
+  service: name=named state=started
+  when: CACHED_BIND == "YES"
+  tags:
+    - bind
+# named
+
+# snmpd
+- name: Deploy snmpd conf
+  template: src=Linux/snmpd.conf.j2 dest=/etc/snmp/snmpd.conf mode=444 owner=root group=wheel backup=yes
+  notify: restart snmpd
+  tags:
+    - snmpd
+# snmpd
+
+- name: Autostart reglament stuff
+  service: name={{ item }} enabled=yes state=started
+  with_items:
+    - irqbalance
+    - snmpd
+  tags:
+    - snmpd

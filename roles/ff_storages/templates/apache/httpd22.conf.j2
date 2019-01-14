@@ -1,0 +1,119 @@
+{% include 'templates/banner.j2' %}
+
+ServerRoot {{ APACHE_ROOT_DIR }}
+Timeout 450
+KeepAlive Off
+StartServers 16
+MinSpareServers 16
+MaxSpareServers 40
+MaxClients 96
+MaxRequestsPerChild 8192
+
+Listen 127.0.0.1:80
+
+LoadModule authz_host_module    libexec/apache22/mod_authz_host.so
+LoadModule log_config_module 	libexec/apache22/mod_log_config.so
+LoadModule mime_magic_module 	libexec/apache22/mod_mime_magic.so
+LoadModule mime_module   	    libexec/apache22/mod_mime.so
+LoadModule status_module 	    libexec/apache22/mod_status.so
+LoadModule cgi_module 	       	libexec/apache22/mod_cgi.so
+LoadModule dir_module 		    libexec/apache22/mod_dir.so
+LoadModule alias_module 	    libexec/apache22/mod_alias.so
+LoadModule rewrite_module 	    libexec/apache22/mod_rewrite.so
+LoadModule php5_module        	libexec/apache22/libphp5.so
+LoadModule rpaf_module          libexec/apache22/mod_rpaf2.so 
+
+ExtendedStatus On
+User www
+Group www
+ServerAdmin webmaster@photofile.ru
+ServerName {{ inventory_hostname }}
+UseCanonicalName Off
+ServerTokens Prod
+ServerSignature Off
+
+RPAFenable On
+RPAFproxy_ips 127.0.0.1 {{ ansible_default_ipv4["address"] }}
+
+LogLevel warn
+ErrorLog /logs/error_log
+TransferLog /logs/access_log
+
+DefaultType text/plain
+AddDefaultCharset windows-1251
+
+DocumentRoot "/www/{{ inventory_hostname }}"
+
+# nextus was here in 2012
+
+<Directory />
+    AllowOverride None
+    Order Deny,Allow
+    Deny from all 
+</Directory>
+
+<Directory "/www">
+    Options FollowSymLinks
+    AllowOverride None
+    Order allow,deny
+    Allow from all
+</Directory>
+
+<Files ~ "^\.ht">
+    Order allow,deny
+    Deny from all
+</Files>
+
+<IfModule mod_dir.c>
+    DirectoryIndex index.php
+</IfModule>
+
+<IfModule mod_autoindex.c>
+    IndexIgnore .??* *~ *# HEADER* README* RCS CVS *,v *,t
+</IfModule>
+
+<IfModule mod_mime.c>
+    TypesConfig etc/apache22/mime.types
+    AddType application/x-compress .Z
+    AddType application/x-gzip .gz .tgz
+    AddType application/x-httpd-php .phtml .php
+    AddType application/x-httpd-php-source .phps
+</IfModule>
+
+<IfModule mod_mime_magic.c>
+    MIMEMagicFile etc/apache22/magic
+</IfModule>
+
+<IfModule mod_status.c>
+    <Location /server-status>
+        SetHandler server-status
+        Order deny,allow
+        Deny from all
+	Allow from 80.68.244.33/28 195.239.111.0/24 80.68.243.0/24 127.0.0.0/8
+    </Location>
+</IfModule>
+
+###########################################
+NameVirtualHost 127.0.0.1:80
+###########################################
+
+<VirtualHost 127.0.0.1:80>
+        ServerName {{ inventory_hostname }}
+        DocumentRoot /www/{{ inventory_hostname }}
+        DirectoryIndex index.html
+</VirtualHost>
+
+<VirtualHost 127.0.0.1:80>
+        ServerName ff{{ FF_STORAGE }}.photofile.ru
+        DocumentRoot /www/ff{{ FF_STORAGE }}.photofile.ru/htdocs
+        ErrorLog {{ FF_LOGS }}/error_log
+    	TransferLog {{ FF_LOGS }}/access_log
+    	
+        ErrorDocument 404 http://photofile.ru/_404/
+	    ErrorDocument 413 http://photofile.ru/413.php
+
+        php_value post_max_size 22M
+        php_value upload_max_filesize 22M
+</VirtualHost>
+
+include {{ APACHE22_CONF_DIR }}/httpd.custom.conf

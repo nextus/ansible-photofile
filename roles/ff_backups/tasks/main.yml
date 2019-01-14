@@ -1,0 +1,11 @@
+---
+
+- name: Create specific user for backup purpose
+  user: name=photofile-backup uid=6690 createhome=no home=/nonexistent shell=/bin/nologin comment="Photofile.ru Backup User"
+
+- name: Set appropriate permissions for rsync-status file
+  file: path=/tmp/rsync-backup owner=photofile-backup group=photofile-backup mode=644
+
+- name: Deploy rsync.sh script
+  copy: src=rsync.sh dest=/root/bin/rsync.sh owner=photofile-backup mode=0550
+

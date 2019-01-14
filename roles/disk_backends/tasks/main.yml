@@ -1,0 +1,60 @@
+---
+
+- name: Create directory for default vhost
+  file: path=/www/{{ inventory_hostname }} owner=root group=wheel mode=0775 state=directory
+  tags:
+    - nginx
+    - apache
+    - www
+
+- name: Deploy nginx conf
+  template: src=nginx/{{ item }}.j2 dest=/usr/local/nginx/conf/{{ item }} backup=no owner=root group=wheel mode=444
+  with_items:
+    - nginx.disk.conf
+    - nginx.conf
+  notify:
+    - reload nginx
+  tags:
+    - nginx
+    - www
+
+- name: Copy nginx init.d file
+  template: src=templates/init.nginx.j2 dest=/etc/init.d/nginx backup=no owner=root group=wheel mode=755
+  tags:
+    - nginx
+    - www
+
+- name: Copy httpd2 configuration files
+  template: src=apache/{{ item }}.j2 dest={{ APACHE_CONF_DIR }}/{{ item }} backup=no owner=root group=wheel mode=0644
+  with_items:
+    - httpd.conf
+  notify:
+    - reload httpd2
+  tags:
+    - www
+    - apache
+
+- name: Run nginx
+  service: name=nginx state=started
+  tags:
+    - nginx
+    - www
+
+- name: Run httpd2
+  service: name=httpd2 state=started
+  tags:
+    - www
+    - apache
+
+- name: Autostart services after reboot
+  service: name={{ item }} enabled=yes
+  with_items:
+    - httpd2
+    - nginx
+    - mysqld
+    - memcached
+  tags:
+    - www
+    - apache
+    - nginx
+

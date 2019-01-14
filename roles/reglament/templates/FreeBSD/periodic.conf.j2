@@ -1,0 +1,34 @@
+{% include 'templates/banner.j2' %}
+
+daily_output="periodic"
+daily_clean_rwho_enable="NO"
+daily_backup_aliases_enable="NO"
+daily_backup_distfile_enable="NO"
+daily_accounting_enable="NO"
+daily_distfile_enable="NO"
+daily_news_expire_enable="NO"
+daily_uuclean_enable="NO"
+daily_status_uucp_enable="NO"
+daily_status_rwho_enable="NO"
+daily_status_security_inline="YES"
+weekly_output="periodic"
+weekly_uucp_enable="NO"
+monthly_output="periodic"
+weekly_locate_enable="NO"
+
+# disable sendmail stats
+daily_clean_hoststat_enable="NO"
+daily_status_mail_rejects_enable="NO"
+daily_status_include_submit_mailq="NO"
+daily_submit_queuerun="NO"
+
+# check ports files checksum
+{% if 'ff_storages' in group_names or 'ff_backups' in group_names %}
+daily_status_security_chkportsum_enable="NO"
+{% else %}
+daily_status_security_chkportsum_enable="YES"
+{% endif %}
+# ntpd
+daily_status_ntpd_enable="YES"
+
+

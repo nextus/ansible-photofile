@@ -1,0 +1,85 @@
+#!/bin/sh
+
+{% include 'templates/banner.j2' %}
+
+SSHIP="/root/bin/fw-sship"
+ipfw=`which ipfw`" -q"
+extif='{{ ansible_default_ipv4.device }}'
+
+if [ "$1" = "echo" ]; then
+    ipfw=`which echo`
+else
+    ipfw=`which ipfw`" -q"
+fi
+
+rule_num=1000
+
+pass ()
+{
+    rule_num=$(($rule_num+10))
+    $ipfw add $rule_num allow $*
+}
+
+count ()
+{
+    rule_num=$(($rule_num+10))
+    $ipfw add $rule_num count $*
+}
+
+deny ()
+{
+    rule_num=$(($rule_num+10))
+    $ipfw add $rule_num deny $*
+}
+
+any ()
+{
+    pass all from $* to any
+    pass all from any to $*
+}
+
+$ipfw -f flush
+
+# loopback iface
+pass ip from any to any via lo0
+deny ip from any to 127.0.0.0/8
+deny ip from 127.0.0.0/8 to any
+
+# fuck off!
+deny ip from me to any in recv ${extif}
+
+# deny special ipz
+deny ip from { 10.0.0.0/8 or 172.16.0.0/12 or 192.168.0.0/16 or 169.254.0.0/16 or 224.0.0.0/4 or 240.0.0.0/4 } to any
+
+# icmp
+deny icmp from any to any frag
+pass icmp from any to any icmptype 0,3,8,11
+
+# tcp established
+pass tcp from any to any established
+
+{% include 'ipfw.' ~ ansible_hostname ~ '.rules.j2' ignore missing %}
+
+# local www
+pass tcp from any to me 80 setup
+
+for IP in `cat $SSHIP`
+do
+         # local ssh
+         pass tcp from $IP to me 22 setup
+         # local rsync
+         pass tcp from $IP to me 873 setup
+         # local memcache
+         pass tcp from $IP to me 11211 setup
+done
+
+# connections from me
+pass tcp from me to any setup
+pass udp from me to any keep-state
+
+# legato, nagios, zhuk, mnt
+any { 80.68.240.31 or 195.239.111.4 or 195.239.111.184 or 195.68.160.192 }
+
+rule_num=64990
+deny ip from any to any
+

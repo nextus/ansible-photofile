@@ -1,0 +1,6 @@
+---
+
+FS_STATIC_LOGS: $LOG_DIR/fs.static.qipim.com
+
+FS_INTERNAL_LOGS: $LOG_DIR/fs.internal.qip.ru
+

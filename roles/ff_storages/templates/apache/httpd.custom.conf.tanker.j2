@@ -1,0 +1,44 @@
+{% include 'templates/banner.j2' %}
+
+Listen 83.229.209.62:8080
+Listen 127.0.0.1:83
+
+<Directory ~ ".*\.svn">
+    Order allow,deny
+    Deny from all
+    Satisfy All
+</Directory>
+
+<VirtualHost 83.229.209.62:8080>
+    ServerName up002.photofile.ru
+    DocumentRoot /www/up002.photofile.ru/htdocs
+    ErrorLog /logs/up002.photofile.ru/error_log
+    TransferLog /logs/up002.photofile.ru/access_log
+    ErrorDocument 404 http://photofile.ru/_404/
+
+    php_value post_max_size 22M 
+    php_value upload_max_filesize 22M 
+
+#    RewriteEngine On
+#    RewriteRule ^/uploadexpress /index.php [L]
+</VirtualHost>
+
+<VirtualHost 127.0.0.1:83>
+    ServerName contest.photofile.ru
+
+    ErrorLog /logs/contest.photofile.ru/error_log
+    TransferLog /logs/contest.photofile.ru/access_log
+
+    RewriteEngine On
+    RewriteCond         %{REQUEST_URI}          !^/thumb.php$
+    RewriteRule ^.*$ /index.php
+
+
+    DocumentRoot /www/contest.photofile.ru/htdocs
+    ErrorDocument 404 http://photofile.ru/_404/
+    ErrorDocument 413 http://photofile.ru/413.php
+
+        php_value post_max_size 22M
+        php_value upload_max_filesize 22M
+</VirtualHost>
+

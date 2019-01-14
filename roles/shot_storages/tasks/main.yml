@@ -1,0 +1,95 @@
+---
+
+- name: Create service user
+  user: name=w3shot uid=6670 createhome=yes shell=/bin/csh comment="service login for shot.qip.ru" group=w3shot groups=www password=hidden update_password=on_create
+
+- name: Set authorized keys for service user
+  authorized_key: user=w3shot key="ssh-rsa AAAAB3NzaC1yc2EAAAABIwAAAQEAqp6XsRd/4Jdk5frQr3+U6QhKJoO7qWj7WyN7MlPp8YsTDfzdKpQdznpgNkVja8T/ZuK9YtJE/oi6X1NOEmg14lmiCex6eb+i0D57Qc08UrYFWTPyi7s4k4AUE5pywZIcAXL+TwFmfFEhZujZS+8ma+98tr3HklRwd03PZmiQpAl4jzzmvHuZ41TYv6Pzz2I0W0c7voqUX1EvX0H5g7xxBFaib/xenqXlJB4IULxyRJ3xVXbdeXgo46YNpQzTrqQ78e87GxXqEe6ABliKThUrfrkOZkl61sd7QItiFDN/tdsv9OGPV1Jhw/bnAzSbvHmv6bpRam9Gy239CbUaOfutQw== w3shot@dev2.pochta.ru"
+
+- name: Deploy rsync config
+  template: src=rsync/rsyncd.conf.j2 dest=/etc/rsyncd.conf backup=no owner=root group=wheel mode=444
+  tags:
+    - rsync
+
+- name: Deploy rsync permissions file
+  template: src=rsync/rsyncd.secrets.j2 dest=/etc/rsyncd.secrets backup=no owner=root group=wheel mode=400
+  tags:
+    - rsync
+
+- name: Enable xinetd for rsync
+  lineinfile: dest=/etc/xinetd.d/rsync regexp='^\s*disable' line='disable   = no' state=present
+  notify: restart xinetd
+  tags:
+    - rsync
+
+- name: Autostart xinetd daemon
+  service: name=xinetd enabled=yes state=started
+  tags:
+    - rsync
+
+- name: Run xinetd daemon
+  service: name=xinetd state=started
+  tags:
+    - rsync
+ 
+- name: Create directory for photos
+  file: path=/www//{{ SHOT_STORAGE }}.photofile.ru/data/photo owner=www group=w3shot mode=0775 state=directory
+
+- name: Copy no.gif file for 404 errors
+  copy: src=no.gif dest=/www/{{ SHOT_STORAGE }}.photofile.ru/data/photo owner=www group=wheel mode=664
+
+- name: Create directories for logs
+  file: path={{ item }} owner=root group=wheel mode=0775 state=directory
+  with_items:
+    - $SHOT_LOGS
+    - $SHOT_BACKUP_LOGS
+    - $SHOT_DAV_LOGS
+    - $SHOT_BACKUP_DAV_LOGS
+  tags:
+    - nginx
+    - www
+
+- name: Copy worldip.conf
+  copy: src=files/worldip.conf dest=/usr/local/nginx/conf/worldip.conf owner=root group=wheel mode=444
+  notify:
+    - reload nginx
+  tags:
+    - nginx
+    - www
+
+- name: Deploy nginx conf
+  template: src=nginx/{{ item }}.j2 dest=/usr/local/nginx/conf/{{ item }} backup=no owner=root group=wheel mode=444
+  with_items:
+    - nginx.shot_storages.conf
+    - nginx.shot_backups.conf
+    - nginx.conf
+  notify:
+    - reload nginx
+  tags:
+    - nginx
+    - www
+
+- name: Copy nginx init.d file
+  template: src=templates/init.nginx.j2 dest=/etc/init.d/nginx backup=no owner=root group=wheel mode=755
+  when: ansible_system == "Linux"
+  tags:
+    - nginx
+    - www
+
+- name: Create directory for default vhost
+  file: path=/www/{{ inventory_hostname }} owner=root group=wheel mode=0775 state=directory
+  tags:
+    - nginx
+    - www
+
+- name: Enable autostart nginx
+  service: name=nginx enabled=yes
+  tags:
+    - nginx
+    - www
+
+- name: Run nginx
+  service: name=nginx state=started
+  tags:
+    - nginx
+    - www

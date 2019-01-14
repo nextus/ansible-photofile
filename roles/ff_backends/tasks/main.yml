@@ -1,0 +1,70 @@
+---
+# These tasks are responsible for copying the latest dev/production code from
+# the version control system.
+
+- name: Deploy private keys for photofile.ru user
+  copy: src={{ item }} dest=/home/photofile.ru/.ssh/ owner=photofile.ru group=w3photofile mode=0400
+  with_items:
+    - roles/reglament/files/ff_photofile.ru/id_rsa
+    - roles/reglament/files/ff_photofile.ru/id_dsa
+
+- name: Resolve IP address for each backends
+  local_action: shell getent hosts {{ FF_BACKEND }} | head -1 | cut -d' ' -f1
+  register: FF_BACKEND_IP
+  changed_when: "FF_BACKEND_IP.rc != 0"
+  always_run: yes
+  tags:
+    - www
+    - apache
+
+- name: Create directory for default vhost
+  file: path=/www/{{ inventory_hostname }} owner=root group=wheel mode=0775 state=directory
+  tags:
+    - www
+    - apache
+
+- name: Put index.php in default vhost
+  copy: src=files/default_index.php dest=/www/{{ inventory_hostname }}/index.php owner=root group=wheel mode=0664
+  tags:
+    - www
+    - apache
+
+- name: Copy httpd2 init.d file
+  template: src=templates/init.httpd2.j2 dest=/etc/init.d/httpd2 backup=no owner=root group=wheel mode=755
+  when: ansible_system == "Linux"
+  tags:
+    - www
+    - apache
+
+- name: Copy php configuration file
+  template: src=php.ini.j2 dest={{ PHP_DIR }}/lib/php.ini backup=no owner=root group=wheel mode=0644
+  notify:
+    - reload httpd2
+  tags:
+    - www
+    - apache
+
+- name: Copy httpd2 configuration files
+  template: src={{ item }}.j2 dest={{ APACHE_CONF_DIR }}/{{ item }} backup=no owner=root group=wheel mode=0644
+  with_items:
+    - httpd.conf
+  notify:
+    - reload httpd2
+  tags:
+    - www
+    - apache
+
+- name: Run httpd2 service at boot time
+  service: name=httpd2 enabled=yes
+  when: ansible_system == "Linux"
+  tags:
+    - www
+    - apache
+
+- name: Run httpd2 right now
+  service: name=httpd2 state=started
+  when: ansible_system == "Linux"
+  tags:
+    - www
+    - apache
+

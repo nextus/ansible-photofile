@@ -1,0 +1,12 @@
+---
+
+- include: reglament.yml
+
+- include: nginx.yml
+
+- include: apache2.yml
+  when: ansible_distribution_release.find("9.1") != 0
+
+- include: apache22.yml
+  when: ansible_distribution_release.find("9.1") == 0
+

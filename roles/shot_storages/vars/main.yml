@@ -1,0 +1,13 @@
+---
+
+SHOT_STORAGE: ex00$SHOT_STORAGE_ID
+
+SHOT_BACKUP_STORAGE: ex00$SHOT_STORAGE_BACKUP_ID
+
+SHOT_DAV_LOGS: $LOG_DIR/ex00.photofile.ru
+
+SHOT_BACKUP_DAV_LOGS: $LOG_DIR/ex00.photofile.ru-backup
+
+SHOT_LOGS: $LOG_DIR/f.s.qip.ru
+
+SHOT_BACKUP_LOGS: $LOG_DIR/f.s.qip.ru-backup

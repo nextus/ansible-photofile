@@ -1,0 +1,11 @@
+{{ LOG_DIR }}/*{{ NGINX_ACCESS_LOG }} {{ LOG_DIR }}/*/*{{ NGINX_ACCESS_LOG }} {{ LOG_DIR }}/*{{ NGINX_ERROR_LOG }} {{ LOG_DIR }}/*/*{{ NGINX_ERROR_LOG }} {
+    daily
+    rotate 14
+    compress
+    sharedscripts
+    dateext
+    missingok
+    postrotate
+        /bin/kill -USR1 $(cat {{ NGINX_PID }} 2>/dev/null) 2>/dev/null || :
+    endscript
+}

@@ -1,0 +1,15 @@
+MAILTO={{ CRON_MAIL }}
+0       *       *       *       *       www             /usr/local/bin/php /www/photofile.ru/crontab/loadup_rss.php
+*/15    *       *       *       *       www             /usr/local/bin/php /www/photofile.ru/crontab/rbcnews.php
+*/10    *       *       *       *       photofile.ru    /usr/local/bin/php /www/photofile.ru/crontab/rbc_top_news.php
+*/10    *       *       *       *       photofile.ru    /usr/local/bin/php /www/photofile.crontab/run.php PhotoOfDay
+0       *       *       *       *       photofile.ru    /usr/local/bin/php /www/photofile.crontab/run.php ContestMakeXml
+*/5     *       *       *       *       photofile.ru    /usr/local/bin/php /www/photofile.ru/crontab/update_genre_contest.php
+30      */4     *       *       *       photofile.ru    /usr/local/bin/php /www/photofile.ru/crontab/clear_capture_table.php
+*/10    *       *       *       *       photofile.ru    /usr/local/bin/php /www/photofile.crontab/run.php FileServersImageGenerator
+*/5     *       *       *       *       photofile.ru    /usr/local/bin/php /www/photofile.crontab/run.php DBServersImageGenerator
+0       */6     *       *       *       photofile.ru    /usr/local/bin/php /www/photofile.ru/crontab/free_space_notification.cron.php
+*/20    *       *       *       *       photofile.ru    OUT=/www/photofile.ru/htdocs/static/loadup_video.js; wget -qO $OUT.tmp http://smotri.com/export/jsvideo/ && [ -s $OUT.tmp ] && mv $OUT.tmp $OUT
+15      *       *       *       *       photofile.ru    OUT=/www/photofile.ru/htdocs/static/incoming/style_news.js; wget -qO $OUT.tmp http://static.feed.rbc.ru/rbc/logical/photofile.ru/style_news.js && [ -s $OUT.tmp ] && mv $OUT.tmp $OUT
+*/5     *       *       *       *       photofile.ru    lockfile -s0 -r0 /tmp/db_check.cron.lock && (/usr/local/php/bin/php -f /www/photofile.ru/crontab/db_check.cron.php ; rm -f /tmp/db_check.cron.lock)
+{% include 'roles/ff_backends/templates/cron/crontab.' ~ ansible_hostname ~ '.j2' ignore missing %}

@@ -1,0 +1,3 @@
+MAILTO={{ CRON_MAIL }}
+*/15    *       *       *       *       root    /usr/bin/find /tmp  -type f -mmin +15 -delete
+*       *       *       *       *       root    /root/bin/kill_converts.sh

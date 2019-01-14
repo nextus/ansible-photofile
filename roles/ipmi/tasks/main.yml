@@ -1,0 +1,7 @@
+---
+
+- name: Run IPMI script
+  shell: curl -k https://mnt.itmm.ru/pub/ipmi_install/ipmi_install.sh | IPMI_PASS='{{ IPMI_PASS }}' bash
+  register: result
+
+- debug: msg="{{ result.stdout }}"

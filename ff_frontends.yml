@@ -1,0 +1,7 @@
+- name: deploy the nginx configuration into photofile frontend servers
+  hosts: ff_frontends
+  sudo: yes
+  vars_files:
+    - "group_vars/{{ ansible_system }}.yml"
+  roles:
+    - ff_frontends

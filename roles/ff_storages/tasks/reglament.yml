@@ -1,0 +1,47 @@
+---
+
+- name: Deploy rsyncd.conf
+  template: src=rsyncd/rsyncd.conf.j2 dest=/usr/local/etc/rsyncd.conf backup=yes owner=root group=wheel mode=0444
+  notify: restart rsyncd
+
+- name: Deploy rsync secret file
+  template: src=rsyncd/rsyncd.secrets dest=/usr/local/etc/rsyncd.secrets backup=no owner=root group=wheel mode=0400
+  notify: restart rsyncd
+
+- name: Autostart rsyncd
+  service: name=rsyncd enabled=yes
+
+- name: Run rsyncd
+  service: name=rsyncd state=started
+
+- name: Deploy script for killing long-running convert processes
+  copy: src=files/kill_converts.sh dest=/root/bin/kill_converts.sh owner=root group=wheel mode=775
+
+- name: Deploy wrapper for ImageMagick for project purposes
+  copy: src=convert.sh dest=/usr/local/bin/convert.sh owner=root group=wheel mode=775
+
+- name: Create directory for default vhost
+  file: path=/www/{{ inventory_hostname }} owner=root group=wheel mode=0775 state=directory
+
+- name: Create directory for photos
+  file: path=/www/ff{{ FF_STORAGE }}.photofile.ru/data/photo owner=www group=w3photofile mode=0775 state=directory
+
+- name: Create directory for previews
+  file: path=/www/ff{{ FF_STORAGE }}.photofile.ru/data/preview_photo owner=www group=w3photofile mode=0775 state=directory
+
+- name: Create tmp directory for project files
+  file: path=/www/photofile-tmp owner=photofile.ru group=w3photofile mode=0777 state=directory
+
+- name: Put index.php in default vhost
+  copy: src=files/default_index.php dest=/www/{{ inventory_hostname }}/index.php owner=root group=wheel mode=0664
+
+- name: Create directory for logs
+  file: path={{ FF_LOGS }} owner=root group=wheel mode=0775 state=directory
+
+- name: Put php.ini
+  copy: src=php.ini dest={{ PHP_DIR }}/lib/php.ini owner=root group=wheel mode=0664
+  notify:
+    - reload httpd2
+  tags:
+    - www
+    - apache

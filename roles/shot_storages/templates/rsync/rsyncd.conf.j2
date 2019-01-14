@@ -1,0 +1,27 @@
+# rsyncd.conf - Example file, see rsyncd.conf(5)
+#
+
+{% include 'templates/banner.j2' %}
+
+# Set this if you want to stop rsync daemon with rc.d scripts
+pid file = /var/run/rsyncd.pid
+
+# Edit this file before running rsync daemon!!
+
+uid = {{ BACKUP_USER }}
+gid = {{ BACKUP_USER }}
+use chroot = no
+#max connections = 4
+#syslog facility = local5
+
+# shot pics
+[{{ SHOT_STORAGE }}]
+path = /www/{{ SHOT_STORAGE }}.photofile.ru/data/photo
+read only = yes
+dont compress = *.*
+
+hosts allow ={% for subnet in SUBNETS %} {{ subnet }}{% endfor %}
+
+secrets file = /etc/rsyncd.secrets
+auth users = {{ BACKUP_USER }}
+

@@ -1,0 +1,19 @@
+---
+
+CA: /etc/pki/tls/cert.pem
+
+NGINX_CONF_DIR: /usr/local/nginx/conf
+
+NGINX_SBIN: /usr/local/nginx/sbin/nginx
+
+NGINX_METHOD: epoll
+
+APACHE_ROOT_DIR: /usr/local/apache2
+
+APACHE_CONF_DIR: $APACHE_ROOT_DIR/conf
+
+APACHE_SBIN: /usr/local/apache2/bin/apachectl
+
+SUDOERS: /etc/sudoers
+
+VCPUS: ${ansible_processor_vcpus}

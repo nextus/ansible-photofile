@@ -1,0 +1,96 @@
+        server {
+        
+            listen          83.229.209.155:80;
+            server_name     cd3-1.disk.qip.ru;
+            
+            access_log      /logs/cd3-1.disk.qip.ru/nginx_access_log;
+            error_log       /logs/cd3-1.disk.qip.ru/nginx_error_log;
+
+            location / {
+                root /www/cd3-1.disk.qip.ru;
+                client_body_temp_path  /www/cd3-1.disk.qip.ru/tmp;
+                autoindex        off;
+                
+                dav_methods      PUT DELETE MKCOL;
+                dav_access       user:rw group:rw all:r;
+                create_full_put_path on;
+                min_delete_depth 1;
+                
+
+                limit_except GET { 
+                    allow 80.68.242.219/32; # dev2.pochta.ru (programmers)
+                    allow 195.68.160.129;   # muhtar
+                    allow 195.68.160.11;    # muhtar
+                    allow 80.68.244.32/27;  # admins
+                    allow 83.229.209.151;   # fs1.relax.ru
+                    allow 83.229.209.152;   # fs2.relax.ru
+                    allow 83.229.209.155;   # fs3.relax.ru
+
+                    deny all;
+                }
+            }
+        }
+        
+        server {
+        
+            listen          83.229.209.155:80;
+            server_name     cd3-2.disk.qip.ru;
+            
+            access_log      /logs/cd3-2.disk.qip.ru/nginx_access_log;
+            error_log       /logs/cd3-2.disk.qip.ru/nginx_error_log;
+
+            location / {
+                root /www/cd3-2.disk.qip.ru;
+                client_body_temp_path  /www/cd3-2.disk.qip.ru/tmp;
+                autoindex        off;
+                
+                dav_methods      PUT DELETE MKCOL;
+                dav_access       user:rw group:rw all:r;
+                create_full_put_path on;
+                min_delete_depth 1;
+                
+
+                limit_except GET { 
+                    allow 80.68.242.219/32; # dev2.pochta.ru (programmers)
+                    allow 195.68.160.129;   # muhtar
+                    allow 195.68.160.11;    # muhtar
+                    allow 80.68.244.32/27;  # admins
+                    allow 83.229.209.151;   # fs1.relax.ru
+                    allow 83.229.209.152;   # fs2.relax.ru
+                    allow 83.229.209.155;   # fs3.relax.ru
+                    deny all;
+                }
+            }
+        }
+        
+        server {
+        
+            listen          83.229.209.155:80;
+            server_name     cd3-3.disk.qip.ru;
+            
+            access_log      /logs/cd3-3.disk.qip.ru/nginx_access_log;
+            error_log       /logs/cd3-3.disk.qip.ru/nginx_error_log;
+
+            location / {
+                root /www/cd3-3.disk.qip.ru;
+                client_body_temp_path  /www/cd3-3.disk.qip.ru/tmp;
+                autoindex        off;
+                
+                dav_methods      PUT DELETE MKCOL;
+                dav_access       user:rw group:rw all:r;
+                create_full_put_path on;
+                min_delete_depth 1;
+                
+
+                limit_except GET { 
+                    allow 80.68.242.219/32; # dev2.pochta.ru (programmers)
+                    allow 195.68.160.129;   # muhtar
+                    allow 195.68.160.11;    # muhtar
+                    allow 80.68.244.32/27;  # admins
+                    allow 83.229.209.151;   # fs1.relax.ru
+                    allow 83.229.209.152;   # fs2.relax.ru
+                    allow 83.229.209.155;   # fs3.relax.ru
+                    deny all;
+                }
+            }
+        }

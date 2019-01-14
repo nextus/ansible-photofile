@@ -1,0 +1,31 @@
+---
+
+# FIXME: https://github.com/ansible/ansible/issues/4822
+#- set_fact: APACHE_CONF_DIR="{{ WA_APACHE_CONF_DIR }}"
+#  when: WA_APACHE_CONF_DIR is defined
+# FIXME
+
+- name: Copy custom apache configuration file
+  template: src={{ item }} dest={{ APACHE22_CONF_DIR }}/httpd.custom.conf backup=yes owner=root group=wheel mode=0644
+  with_first_found:
+    - ../templates/apache/httpd.custom.conf.{{ ansible_hostname }}.j2
+    - ../templates/apache/httpd.custom.conf.j2
+  notify:
+    - reload httpd22
+  tags:
+    - www
+    - apache
+
+- name: Copy main apache configuration file
+  template: src=apache/httpd22.conf.j2 dest={{ APACHE22_CONF_DIR }}/httpd.conf backup=yes owner=root group=wheel mode=0644
+  notify:
+    - reload httpd22
+  tags:
+    - www
+    - apache
+
+- name: Start apache on bootup
+  service: name=apache22 enabled=yes state=started
+  tags:
+    - www
+    - apache

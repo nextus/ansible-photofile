@@ -1,0 +1,9 @@
+---
+
+- name: deploy configration into photofile backups storages
+  hosts: ff_backups
+  sudo: yes
+  vars_files:
+    - "group_vars/{{ ansible_system }}.yml"
+  roles:
+    - ff_backups

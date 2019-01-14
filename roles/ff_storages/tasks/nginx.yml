@@ -1,0 +1,30 @@
+---
+
+- name: Copy custom nginx configuration files
+  template: src={{ item }} dest={{ NGINX_CONF_DIR }}/nginx.custom.conf backup=yes owner=root group=wheel mode=0644
+  with_first_found:
+    - ../templates/nginx.custom.conf.{{ ansible_hostname }}.j2
+    - ../templates/nginx.custom.conf.j2
+  notify:
+    - reload nginx
+  tags:
+    - www
+    - nginx
+
+- name: Copy nginx configuration files
+  template: src={{ item }}.j2 dest={{ NGINX_CONF_DIR }}/{{ item }} backup=yes owner=root group=wheel mode=0644
+  with_items:
+    - nginx.conf
+    - nginx.storages.conf
+    - nginx.resize.conf
+  notify:
+    - reload nginx
+  tags:
+    - www
+    - nginx
+
+- name: Start nginx on bootup
+  service: name=nginx enabled=yes
+  tags:
+    - www
+    - nginx

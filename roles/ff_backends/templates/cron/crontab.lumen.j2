@@ -1,0 +1,2 @@
+30       */2     *       *       *       root            lockfile -s0 -r0 /var/run/clean_cache.lock && ( /bin/nice -n 20 find /cache/ -type f -mmin +240 -delete ; rm -f /var/run/clean_cache.lock )
+*/30    *       *       *       *       www      OUT=/www/photofile.ru/htdocs/static/contesttop.jpg; wget -qO $OUT.tmp http://photofile.ru/concurs/96/xml/?thebest && [ -s $OUT.tmp ] && mv $OUT.tmp $OUT

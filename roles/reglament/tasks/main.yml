@@ -1,0 +1,15 @@
+---
+
+#- include: check.yml
+
+- include: ff.yml
+  when: "'ff' in group_names"
+
+- include: all.yml
+
+- include: FreeBSD.yml
+  when: ansible_system == "FreeBSD"
+
+- include: CentOS.yml
+  when: ansible_distribution == "CentOS"
+

@@ -1,0 +1,65 @@
+#!/bin/sh                                                                                                                                                      
+#                                                                                                                                                              
+# Startup script for the Apache Web Server                                                                                                                     
+#                                                                                                                                                              
+# chkconfig: 345 85 15                                                                                                                                         
+# description: Apache is a World Wide Web server.  It is used to serve \                                                                                       
+#              HTML files and CGI.                                                                                                                             
+# processname: httpd                                                                                                                                           
+                                                                                                                                                               
+# Source function library.                                                                                                                                     
+. /etc/rc.d/init.d/functions                                                                                                                                   
+#export NLS_DATE_FORMAT="DD.MM.YY  hh24:mi:ss"
+
+PID={{ APACHE_PID }}
+BIN={{ APACHE_SBIN }}
+
+# See how we were called.
+case "$1" in
+  start)
+        echo -n "Starting httpd: "
+        $BIN start
+        if [ "$?" -eq 0 ]; then
+                echo "OK"
+                else 
+                echo "FAILED"
+        fi
+        ;;
+  stop)
+        echo -n "Shutting down httpd: "
+        $BIN stop
+        if [ "$?" -eq 0 ]; then
+                echo "OK"
+                else 
+                echo "FAILED"
+        fi
+        ;;
+  status)
+        status httpd
+        ;;
+  restart)
+        echo -n "Restarting httpd: "
+        $BIN restart
+        if [ "$?" -eq 0 ]; then
+                echo "OK"
+                else 
+                echo "FAILED"
+        fi
+        ;;
+  reload)
+        echo -n "Reloading httpd: "
+        $BIN graceful
+        if [ "$?" -eq 0 ]; then
+                echo "OK"
+                else 
+                echo "FAILED"
+        fi
+        ;;
+  *)
+        echo "Usage: $0 {start|stop|restart|reload|status}"
+        exit 1
+esac
+
+exit 0
+
+

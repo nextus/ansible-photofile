@@ -1,0 +1,10 @@
+---
+
+- name: deploy configuration into central log server
+  hosts: centraal
+  sudo: yes
+  vars_files:
+    - "group_vars/{{ ansible_system }}.yml"
+  roles:
+    - centraal
+

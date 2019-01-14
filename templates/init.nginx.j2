@@ -1,0 +1,64 @@
+#!/bin/bash
+#
+# Startup script for the Nginx service
+#
+# chkconfig: 345 85 15
+# description: proxy http and static out
+# processname: nginx
+
+# Source function library.
+. /etc/rc.d/init.d/functions
+#export NLS_DATE_FORMAT="DD.MM.YY  hh24:mi:ss"
+ulimit -n 10240
+
+PID="{{ NGINX_PID }}"
+BIN="{{ NGINX_SBIN }}"
+
+case "$1" in
+  start)
+    echo -n "Starting nginx: "
+    $BIN
+    if [ "$?" = 0 ]; then
+        echo "OK"
+        else
+        echo "FAILED"
+    fi
+    ;;
+  stop)
+    echo -n "Shutting down nginx: "
+    if [ -f $PID ]; then
+        kill `cat $PID`
+        if [ "$?" = 0 ]; then
+                echo "OK"
+            else
+                echo "FAILED"
+        fi
+    fi
+    ;;
+  status)
+    status nginx
+    ;;
+  restart)
+    $0 stop
+    $0 start
+    ;;
+  reload)
+    echo -n "Reloading nginx: "
+    if [ -f $PID ]; then
+        kill -HUP `cat $PID`
+        if [ "$?" = 0 ];then
+                echo "OK"
+            else
+                echo "FAILED"
+        fi
+        else 
+        echo "FAILED"
+    fi
+    ;;
+  *)
+    echo "Usage: $0 {start|stop|restart|reload|status}"
+    exit 1
+esac
+
+exit 0
+

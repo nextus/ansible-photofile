@@ -1,0 +1,162 @@
+[client]
+port                            = 3306
+socket                          = /tmp/mysql.sock
+
+[mysqld1]
+skip-locking
+skip-innodb
+skip-name-resolve
+port                            = 3306
+user                            = mysql
+socket                          = /tmp/mysql.sock
+log-output                      = FILE
+basedir                         = /usr/
+datadir                         = /www/db
+tmpdir                          = /www/tmp/mysql
+#log                            = /logs/mysql/query_log
+log-error                       = /logs/mysql/mysql
+log-slow-queries                = /logs/mysql/mysql-slow.log
+long_query_time                 = 2
+#skip-slave-start
+server-id                       = 113
+relay-log                       = mysql-bin
+master-host                     = mysql7.photofile.ru
+master-user                     = replication
+master-password                 = hidden
+master-connect-retry            = 10
+
+replicate-do-db                 = app_smsrating
+replicate-do-db                 = app_search
+replicate-do-db                 = app_forum
+replicate-do-db                 = app_system
+replicate-do-db                 = app_market
+replicate-do-db                 = app_exif
+replicate-do-db                 = app_print
+replicate-do-db                 = app_contest
+replicate-do-db                 = app_express
+replicate-do-db                 = app_tags
+replicate-do-db                 = app_client
+
+slave_skip_errors               = 1053,1062,1146
+
+default-storage-engine          = MyISAM
+
+key_buffer_size                 = 192M
+myisam-recover                  = BACKUP,FORCE
+#delay_key_write                = ALL
+
+max_connections                 = 1024          # 100
+max_connect_errors              = 10000         # 10
+thread_cache_size               = 64            # 0
+table_cache                     = 2048          # 64
+max_allowed_packet              = 16M            # 1M
+myisam_sort_buffer_size         = 64M           # 8M
+#sort_buffer_size                = 4M            # 2M
+read_buffer_size                = 1M            # 128K
+read_rnd_buffer_size            = 512K          # 256K
+tmp_table_size                  = 64M           # 32M
+#max_seeks_for_key              = 8192          # 4bil
+query_cache_size                = 8M            # 0
+max_write_lock_count            = 8             # 4bil
+
+[mysqld2]
+#skip-locking
+skip-innodb
+skip-name-resolve
+#old-passwords
+port                            = 3307
+user                            = mysql
+socket                          = /tmp/mysql2.sock
+log-output                      = FILE
+basedir                         = /usr
+datadir                         = /www/db2
+tmpdir                          = /www/tmp/mysql2
+symbolic-links                  = 0
+#log                            = /logs/mysql2/query_log
+log-error                       = /logs/mysql2/mysql
+log-slow-queries                = /logs/mysql2/mysql-slow.log
+long_query_time                 = 2
+
+server-id                       = 112 
+log-bin                         = mysql-bin-master
+expire_logs_days                = 3
+
+default-storage-engine          = MyISAM
+
+key_buffer_size                 = 192M
+myisam-recover                  = BACKUP,FORCE
+#delay_key_write                = ALL
+
+max_connections                 = 1024          # 100
+max_connect_errors              = 10000         # 10
+thread_cache_size               = 64            # 0
+table_cache                     = 2048          # 64
+max_allowed_packet              = 64M            # 1M
+myisam_sort_buffer_size         = 32M           # 8M
+#sort_buffer_size                = 4M            # 2M
+read_buffer_size                = 256K            # 128K
+read_rnd_buffer_size            = 512K          # 256K
+tmp_table_size                  = 64M           # 32M
+#max_seeks_for_key              = 8192          # 4bil
+query_cache_size                = 8M            # 0
+max_write_lock_count            = 8             # 4bil[mysqldump]
+#quick
+max_allowed_packet              = 16M
+#default-character-set          = cp1251
+
+[mysqld3]
+#skip-locking
+skip-name-resolve
+#old-passwords
+port                            = 3308
+user                            = mysql
+socket                          = /tmp/mysql3.sock
+log-output                      = FILE
+basedir                         = /usr
+datadir                         = /www/db3
+tmpdir                          = /www/tmp/mysql3
+symbolic-links                  = 0
+#log                             = /logs/mysql/query3_log
+log-error                       = /logs/mysql/mysql3 
+log-slow-queries                = /logs/mysql/mysql3-slow.log
+long_query_time                 = 2
+
+server-id                       = 211
+log-bin                         = mysql-bin-master
+expire_logs_days                = 3
+
+innodb_file_per_table
+innodb_buffer_pool_size         = 5120M
+innodb_additional_mem_pool_size = 100M
+innodb_flush_log_at_trx_commit  = 0
+
+default-storage-engine          = MyISAM
+
+key_buffer_size                 = 192M
+myisam-recover                  = BACKUP,FORCE
+#delay_key_write                = ALL
+
+max_connections                 = 1024          # 100
+max_connect_errors              = 10000         # 10
+thread_cache_size               = 64            # 0
+table_cache                     = 2048          # 64
+max_allowed_packet              = 64M           # 1M
+myisam_sort_buffer_size         = 32M           # 8M
+#sort_buffer_size                = 4M            # 2M
+read_buffer_size                = 256K          # 128K
+read_rnd_buffer_size            = 512K          # 256K
+tmp_table_size                  = 64M           # 32M
+#max_seeks_for_key              = 8192          # 4bil
+query_cache_size                = 8M            # 0
+max_write_lock_count            = 8             # 4bil
+
+[mysql]
+no-auto-rehash
+#default-character-set          = cp1251
+
+[myisamchk]
+key_buffer                      = 512M
+sort_buffer                     = 512M
+read_buffer                     = 64M
+tmpdir                          = /www/tmp/mysql
+

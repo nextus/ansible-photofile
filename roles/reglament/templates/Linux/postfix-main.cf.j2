@@ -1,0 +1,29 @@
+mydestination =
+mynetworks_style = host
+relayhost = {% if SPAM == "YES" %}[relay2.itmm.ru]{% else %}[relay.itmm.ru]{% endif %}
+
+smtpd_banner = $myhostname ESMTP
+sendmail_path = /usr/sbin/sendmail.postfix
+newaliases_path = /usr/bin/newaliases.postfix
+mailq_path = /usr/bin/mailq.postfix
+smtp_destination_concurrency_limit = 4
+smtpd_client_connection_count_limit = 4
+disable_vrfy_command = yes
+smtp_helo_timeout = 30s
+smtp_connect_timeout = 10s
+maximal_queue_lifetime = 2d
+message_size_limit = 102400000
+bounce_queue_lifetime = 0
+local_transport = error:local delivery is disabled
+masquerade_classes = envelope_recipient, envelope_sender, header_sender, header_recipient
+masquerade_domains = itmm.ru
+html_directory = no
+setgid_group = postdrop
+command_directory = /usr/sbin
+manpage_directory = /usr/share/man
+daemon_directory = /usr/libexec/postfix
+queue_directory = /var/spool/postfix
+mail_owner = postfix
+{% if SPAM != "YES" %}
+smtpd_recipient_restrictions = reject_unknown_recipient_domain, reject_non_fqdn_recipient
+{% endif %}

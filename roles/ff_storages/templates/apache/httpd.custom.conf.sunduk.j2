@@ -1,0 +1,14 @@
+LoadModule dav_module         libexec/apache2/mod_dav.so
+LoadModule dav_svn_module     libexec/apache2/mod_dav_svn.so
+
+<VirtualHost 127.0.0.1:80>
+        ServerName download.photofile.ru
+        DocumentRoot /www/download.photofile.ru/htdocs
+        ErrorLog /logs/download.photofile.ru/error_log
+        TransferLog /logs/download.photofile.ru/apache_access_log
+        ErrorDocument 404 http://photofile.ru/_404/
+        ErrorDocument 413 http://photofile.ru/413.php
+
+        php_value post_max_size 22M
+        php_value upload_max_filesize 22M
+</VirtualHost>

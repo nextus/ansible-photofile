@@ -1,0 +1,148 @@
+{% include 'templates/banner.j2' %}
+
+upstream shot {
+    server web1.shot.qip.ru:81 weight=10; # kunugi
+    server web2.shot.qip.ru:81 weight=10; # ketamine
+}
+
+server {
+    listen          195.239.111.3:80;
+    listen          195.239.111.33:80;
+    listen          195.239.111.3:443;
+    listen          195.239.111.33:443;
+
+    server_name     s.qip.ru fun.photo.qip.ru express.photofile.ru pics.qip.ru m.pics.qip.ru m.shot.photo.qip.ru;
+
+    ssl_certificate         /usr/local/nginx/conf/certs/server.crt;
+    ssl_certificate_key     /usr/local/nginx/conf/certs/server.key;
+
+    location ~ /.svn/ { deny all; }
+
+    location / {
+        rewrite ^/(.*)$ http://shot.qip.ru/$1 permanent;
+    }
+}
+
+server {
+    listen          195.239.111.3:80;
+    listen          195.239.111.33:80;
+
+    server_name     clip.photofile.ru www.clip.photofile.ru;
+
+    access_log      {{ LOG_DIR }}/shot.qip.ru/clip_{{ NGINX_ACCESS_LOG }};
+    error_log       {{ LOG_DIR }}/shot.qip.ru/clip_{{ NGINX_ERROR_LOG }};
+
+    location ~ /.svn/ { deny all; }
+
+    location / { 
+        rewrite ^/(.*)$ "http://shot.qip.ru/?from=clip" permanent;
+    }   
+}   
+
+server {
+    listen          195.239.111.3:80;
+    listen          195.239.111.33:80;
+    listen          195.239.111.3:443;
+    listen          195.239.111.33:443;
+
+#                server_name        shot.photo.qip.ru fun.photo.qip.ru express.photofile.ru pics.qip.ru m.pics.qip.ru m.shot.photo.qip.ru shot.qip.ru ;
+    server_name         shot.qip.ru shot.photo.qip.ru ;
+    access_log              {{ LOG_DIR }}/shot.qip.ru/{{ NGINX_ACCESS_LOG }};
+    error_log               {{ LOG_DIR }}/shot.qip.ru/{{ NGINX_ERROR_LOG }};
+    proxy_set_header        Host $host;
+    proxy_set_header        X-Forwarded-For $proxy_add_x_forwarded_for;
+
+# ban China since 03.12.12
+    set $not_block 1;
+    if ($country = CN) { set $not_block 0; } #China
+        if ($country = XX) { set $not_block 1; } #Unknown, unallocated or no trace
+            if ($not_block = 0) { return 403; } 
+
+    if ($host ~ "(fun.photo.qip.ru|express.photofile.ru|pics.qip.ru|m.pics.qip.ru|m.shot.photo.qip.ru)" ) {
+        rewrite ^/(.*)$ "http://shot.qip.ru/$1" permanent;
+    }
+
+    location /albums/all/ {
+        rewrite ^/albums/all/(.*)$ http://photo.qip.ru/albums/all/$1 permanent;
+    }
+
+    location ~ ^/download/ {
+        access_log {{ LOG_DIR }}/shot.qip.ru/download_{{ NGINX_ACCESS_LOG }};
+        root /www/shot.qip.ru/root;
+    }
+
+    location /uploadexpress/ {
+        proxy_set_header Host shot.qip.ru;
+        proxy_set_header X-Host shot.qip.ru;
+        proxy_set_header X-Real-IP $remote_addr;
+#proxy_pass http://shot.qip.ru;
+        proxy_pass      http://shot;
+    }
+
+    location /plashko/ {
+        proxy_set_header Host api.qip.ru;
+        proxy_pass http://api.qip.ru/index/head/?partner=shot;
+    }
+
+    location ~* ^/static {
+        root /www/shot.qip.ru/root;
+    }
+
+    location ~* ^/(jslib|images) {
+        rewrite ^/jslib/(.*) /static/$1 break;
+        rewrite ^/images/(.*) /static/$1 break;
+        root /www/shot.qip.ru/root;
+    }
+
+    location ~ ^/[^~]+\.(txt|xml|html|htm|ico) {
+        root /www/shot.qip.ru/root/static;
+    }
+
+    location ~* ^/(j|c|i|skins)/ {
+        root /www/shot.qip.ru/root;
+    }
+
+    location ~* ^/[^-]+\-[^/]+/$ {
+        if ($host ~ "^shot.photo.qip.ru$" ) {
+            rewrite ^(.*)$ http://shot.qip.ru$1 permanent;
+        }
+        rewrite /(.*)   /index.php/$1 break;
+        proxy_pass      http://shot;
+        proxy_intercept_errors  on;
+        ssi on;
+    }
+
+    location / {
+        rewrite /(.*)   /index.php/$1 break;
+        proxy_pass      http://shot;
+        proxy_intercept_errors  on;
+        ssi on;
+    }
+
+    location = /no.gif {
+        root /www/shot.qip.ru/root/i/;
+    }
+
+    location = /images/express/pad.xml {
+        rewrite /(.*) /static/pad.xml permanent;
+    }
+
+    location ~ "^/(small/)?[0-9a-zA-Z]{7}\.(jpe?g|gif|png|tiff?|bmp)" {
+        set $se ex001;
+
+        if ( $request_uri ~ "^/([0-9])[0-9a-zA-Z]{6}" ) {
+            set $se ex00$1;
+        }
+
+        if ( $request_uri ~ "^/small/([0-9])[0-9a-zA-Z]{6}" ) {
+            set $se ex00$1;
+        }
+
+        resolver 127.0.0.1;
+        resolver_timeout 3s;
+
+        proxy_set_header Host $se.photofile.ru;
+        proxy_pass http://$se.photofile.ru$uri;
+    }
+}
+

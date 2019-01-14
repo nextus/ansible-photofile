@@ -1,0 +1,26 @@
+---
+
+- name: Copy custom apache configuration file
+  template: src={{ item }} dest={{ APACHE_CONF_DIR }}/httpd.custom.conf backup=yes owner=root group=wheel mode=0644
+  with_first_found:
+    - ../templates/apache/httpd.custom.conf.{{ ansible_hostname }}.j2
+    - ../templates/apache/httpd.custom.conf.j2
+  notify:
+    - reload httpd2
+  tags:
+    - www
+    - apache
+
+- name: Copy main apache configuration file
+  template: src=apache/httpd2.conf.j2 dest={{ APACHE_CONF_DIR }}/httpd.conf backup=yes owner=root group=wheel mode=0644
+  notify:
+    - reload httpd2
+  tags:
+    - www
+    - apache
+
+- name: Start apache on bootup
+  service: name=apache2 enabled=yes state=started
+  tags:
+    - www
+    - apache

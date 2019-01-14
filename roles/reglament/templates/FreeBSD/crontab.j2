@@ -1,0 +1,39 @@
+# /etc/crontab - root's crontab for FreeBSD
+#
+# $FreeBSD: src/etc/crontab,v 1.33.2.1.6.1 2010/12/21 17:09:25 kensmith Exp $
+#
+
+{% include 'templates/banner.j2' %}
+
+SHELL=/bin/sh
+PATH=/etc:/bin:/sbin:/usr/bin:/usr/sbin:/usr/local/bin:/usr/local/sbin
+
+#
+#minute hour    mday    month   wday    who command
+#
+*/5     *       *       *       *       root                /usr/libexec/atrun
+#
+# Save some entropy so that /dev/random can re-seed on boot.
+*/11    *       *       *       *       operator            /usr/libexec/save-entropy
+#
+# Rotate log files every hour, if necessary.
+0       *       *       *       *       root                newsyslog
+#
+# Perform daily/weekly/monthly maintenance.
+1       3       *       *       *       root                periodic daily
+15      4       *       *       6       root                periodic weekly
+30      5       1       *       *       root                periodic monthly
+#
+# Adjust the time zone if the CMOS clock keeps local time, as opposed to
+# UTC time.  See adjkerntz(8) for details.
+1,31    0-5     *       *       *       root                adjkerntz -a
+MAILTO=root@itmm.ru
+*       *       *       *       *       root                /root/bin/cvsbackup_run.sh 2>/var/log/cvsbackup.log
+0       0       *       *       *       root                nice -n 10 /root/bin/lr.sh
+{% if ansible_default_ipv4.device.find("em") != -1 %}
+*/3     *       *       *       *       root                /usr/local/etc/rc.d/em-settings.sh 1>/dev/null 2>/dev/null
+{% endif %}
+
+{% for group in group_names %}
+{% include 'roles/' ~ group ~ '/templates/cron/crontab.j2' ignore missing %}
+{% endfor %}

@@ -1,0 +1,13 @@
+---
+
+- name: Create directory for centralized log storage
+  file: path=/www/logs/ owner=root group=wheel mode=0770 state=directory
+  tags:
+    - rsyslog
+
+- name: Copy logrotate for centralized log server
+  template: src=logrorate.centraal.conf dest=/etc/logrotate.d/centraal backup=no owner=root group=wheel mode=0444
+  notify: restart rsyslog
+  tags:
+    - rsyslog
+

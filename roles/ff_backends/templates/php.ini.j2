@@ -1,0 +1,62 @@
+[PHP]                                                                                                                                                          
+allow_call_time_pass_reference = Off                                                                                                                           
+display_errors = Off                                                                                                                                           
+error_reporting = E_ALL 
+log_errors = On
+magic_quotes_gpc = Off
+memory_limit = 256M
+register_argc_argv = Off
+upload_tmp_dir = /tmp
+variables_order = "GPCS"
+session.save_path = /www/sessions
+session.save_handler = user
+session.gc_maxlifetime = 3600
+session.gc_divisor = 1000
+
+[Date]
+date.timezone = "Europe/Moscow"
+extension=memcache.so
+extension=xcache.so
+mysql.connect_timeout = 10
+
+;[eaccelerator]
+;extension=eaccelerator.so
+;eaccelerator.shm_size="256"
+;eaccelerator.debug="0"
+;eaccelerator.shm_ttl="3600"
+;eaccelerator.shm_only="0"
+;eaccelerator.compress="0"
+
+[xcache.admin]                                                                                                                                                 
+xcache.admin.user = "admin"                                                                                                                                    
+xcache.admin.pass = "331c6883dd6010864b7ead130be77cd5"                                                                                                         
+                                                                                                                                                               
+[xcache]                                                                                                                                                       
+xcache.shm_scheme =        "mmap"                                                                                                                              
+xcache.size  =               256M                                                                                                                              
+xcache.count =                16                                                                                                                               
+xcache.slots =               16K                                                                                                                               
+xcache.ttl   =               800                                                                                                                               
+xcache.gc_interval =         300                                                                                                                               
+                                                                                                                                                               
+xcache.var_size  =            64M                                                                                                                              
+xcache.var_count =             1                                                                                                                               
+xcache.var_slots =            16K                                                                                                                              
+xcache.var_ttl   =            0                                                                                                                              
+xcache.var_maxttl   =         400                                                                                                                              
+xcache.var_gc_interval =      0                                                                                                                              
+                                                                                                                                                               
+xcache.test =                Off                                                                                                                               
+xcache.readonly_protection = On                                                                                                                                
+xcache.mmap_path =    "/dev/zero"                                                                                                                              
+                                                                                                                                                               
+xcache.coredump_directory =   ""                                                                                                                               
+                                                                                                                                                               
+xcache.cacher =               On                                                                                                                               
+xcache.stat   =               Off                                                                                                                               
+xcache.optimizer =            On                                                                                                                               
+                                                                                                                                                               
+[xcache.coverager]                                                                                                                                             
+xcache.coverager =          Off                                                                                                                                
+xcache.coveragedump_directory = ""                                                                                                                             
+expose_php = Off 

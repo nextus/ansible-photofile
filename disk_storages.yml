@@ -1,0 +1,10 @@
+---
+
+- name: deploy configration into disk.qip.ru storages
+  hosts: disk_storages
+  sudo: yes
+  vars_files:
+    - "group_vars/{{ ansible_system }}.yml"
+  roles:
+    - disk_storages
+

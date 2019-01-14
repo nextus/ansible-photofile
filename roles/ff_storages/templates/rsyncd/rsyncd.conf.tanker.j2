@@ -1,0 +1,18 @@
+# up002.photofile.ru
+[up002]
+path = /www/up002.photofile.ru
+read only = yes
+outgoing chmod = Dg+rwx,Fg+rw
+dont compress = *.*
+hosts allow = 83.229.209.41 80.68.242.124
+secrets file = /usr/local/etc/rsyncd.secrets
+auth users = photofile.ru
+
+#contest.photofile.ru
+[contest]
+path = /www/contest.photofile.ru
+read only = yes
+dont compress = *.*
+hosts allow = 83.229.209.41
+secrets file = /usr/local/etc/rsyncd.secrets
+auth users = photofile.ru

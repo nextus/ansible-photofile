@@ -1,0 +1,14 @@
+proc "back-endd#1"
+proc "back-endd#2"
+proc "back-endd#3"
+proc "back-endd#4"
+proc "back-endd#5"
+proc "back-endd#6"
+proc "stat-server"
+
+exec sborvlente /etc/snmp/check_lenta_size.sh
+exec checkdisks /etc/snmp/check_disks.sh -c 1:1
+exec lenta_errors /etc/snmp/check_lenta_for_errors.sh
+exec lenta-big-size /bin/cat /etc/snmp/lenta-big-sizeg
+exec lenta-size /bin/cat /etc/snmp/lenta-size-m
+

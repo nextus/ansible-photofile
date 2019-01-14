@@ -1,0 +1,9 @@
+---
+
+DISK_QIP: disk.qip.ru
+
+DISK_QIP_LOGS: $LOG_DIR/$DISK_QIP
+
+DISK2_QIP: disk2.qip.ru
+
+DISK2_QIP_LOGS: $LOG_DIR/$DISK2_QIP

@@ -1,0 +1,9 @@
+{% include 'templates/banner.j2' %}
+
+{% import "nginx.photofile.mainserver.conf.j2" as template with context %}
+
+{% for http_port in range(http_debug_port, http_debug_port + groups['ff_backends']|count, 1) %}
+{% set backend = groups['ff_backends'][loop.index0] %}
+{{ template.input(hostvars[backend]['FF_BACKEND'],http_port,0) }}
+{% endfor %}
+

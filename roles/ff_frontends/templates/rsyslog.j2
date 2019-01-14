@@ -1,0 +1,7 @@
+# Send photofile.ru access logs by nginx
+#$InputFileName {{ LOG_DIR }}/photofile.ru/{{ NGINX_ACCESS_LOG }}
+#$InputFileTag photofile-access:
+#$InputFileStateFile {{ NGINX_ACCESS_LOG }}.photofile.ru.rlog
+#$InputFileSeverity info
+#$InputFileFacility local0
+#$InputRunFileMonitor

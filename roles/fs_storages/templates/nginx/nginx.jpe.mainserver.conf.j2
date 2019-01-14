@@ -1,0 +1,68 @@
+{% macro input(prt,jpe,qipim,qip) %}
+    server {
+{% if jpe != qipim %}
+        listen		    {{ jpe }}:80;
+        listen		    {{ qipim }}:80;
+{% else %}
+        listen		    {{ jpe }}:80;
+{% endif %}
+
+        server_name     fs{{ prt.num }}.static.qipim.com fs{{ prt.num }}.jpe.ru;
+
+		access_log  	{{ FS_STATIC_LOGS }}/{{ NGINX_ACCESS_LOG }};
+		error_log  	    {{ FS_STATIC_LOGS }}/{{ NGINX_ERROR_LOG }};
+
+		location / {
+			client_body_temp_path  /{{ prt.part }}/fs{{ prt.num }}/tmp;
+			autoindex        off;
+			dav_methods      PUT DELETE MKCOL;
+			dav_access       user:rw group:rw all:r;
+			create_full_put_path on;
+			min_delete_depth 1;
+			root /{{ prt.part }}/fs{{ prt.num }};
+
+			include allow_dav.conf;
+		}
+
+		location ~* ^/([0-9a-z_-]+)/([0-9a-z_-]+)/[^/]+(\.[0-9a-z]+)$ {
+			alias /{{ prt.part }}/fs{{ prt.num }}/$1/$2$3;
+		}
+
+		location ~* ^/([0-9a-z_-]+)/([0-9a-z_-]+)/[^./]+$ {
+			alias /{{ prt.part }}/fs{{ prt.num }}/$1/$2;
+		}
+	}
+
+	server {
+		listen		    {{ qip }}:80;
+		listen		    {{ qip }}:443 ssl;
+	
+		server_name     fs{{ prt.num }}.qip.ru;
+
+		access_log  	{{ FS_INTERNAL_LOGS }}/{{ NGINX_ACCESS_LOG }};
+		error_log       {{ FS_INTERNAL_LOGS }}/{{ NGINX_ERROR_LOG }};
+
+        ssl_certificate         /usr/local/nginx/conf/certs/server.crt;
+        ssl_certificate_key     /usr/local/nginx/conf/certs/server.key;
+
+		location / {
+			client_body_temp_path  /{{ prt.part }}/fs{{ prt.num }}/tmp;
+			autoindex        off;
+			dav_methods      PUT DELETE MKCOL;
+			dav_access       user:rw group:rw all:r;
+			create_full_put_path on;
+			min_delete_depth 1;
+			root /{{ prt.part }}/fs{{ prt.num }};
+
+			include allow_dav.conf;
+		}
+
+		location ~* ^/([0-9a-z_-]+)/([0-9a-z_-]+)/[^/]+(\.[0-9a-z]+)$ {
+			alias /{{ prt.part }}/fs{{ prt.num }}/$1/$2$3;
+		}
+
+		location ~* ^/([0-9a-z_-]+)/([0-9a-z_-]+)/[^./]+$ {
+			alias /{{ prt.part }}/fs{{ prt.num }}/$1/$2;
+		}
+	}
+{%- endmacro %}

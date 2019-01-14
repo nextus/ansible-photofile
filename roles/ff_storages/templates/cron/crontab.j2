@@ -1,0 +1,9 @@
+MAILTO={{ CRON_MAIL }}
+*       *       *       *       *       root                /root/bin/kill_converts.sh
+0       */3     *       *       *       photofile.ru        /usr/bin/find /www/photofile-tmp/ -type f -mtime +6h -not -name ns_error.txt -delete
+10      *       *       *       *       photofile.ru        /usr/local/bin/php /www/ff{{ FF_STORAGE }}.photofile.ru/FreeSpace.cron.php
+*       *       *       *       *       photofile.ru        /usr/local/bin/php /www/ff{{ FF_STORAGE }}.photofile.ru/crontab/run.php AlbumDownload
+# Clean files for banned users and removed albums
+# this shit deletes valid user photos: disabled on 25.12.13. Happy new year!
+#0       4       *       *       0       www                 cd /tmp; /usr/local/bin/php /www/ff{{ FF_STORAGE }}.photofile.ru/spider/normalizer.php
+{% include 'roles/ff_storages/templates/cron/crontab.' ~ ansible_hostname ~ '.j2' ignore missing %}

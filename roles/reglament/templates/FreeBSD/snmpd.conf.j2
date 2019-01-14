@@ -1,0 +1,81 @@
+###############################################################################
+# Access Control
+###############################################################################
+
+#       sec.name   source               community
+com2sec local      127.0.0.1/32         SNMPRBC01
+com2sec monitoring 195.239.111.184      SNMPRBC01
+
+
+#                sec.model sec.name
+group local      v1        local
+group monitoring v1        monitoring
+group monitoring v2c       monitoring
+
+
+#           incl/excl subtree mask
+view all    included  .1      80
+
+#                 context sec.model sec.level prefix read   write  notif
+access monitoring ""      v1        noauth    exact  all    none   none
+access monitoring ""      v2c       noauth    exact  all    none   none
+access local      ""      v1        noauth    exact  all    none   none
+
+###############################################################################
+# System contact information
+###############################################################################
+
+syslocation RBC HQ, Zone 2 Rack 18, Moscow, Russia
+# syslocation RBC GT Colocation, Rack F-X, Moscow, Russia
+# syslocation RBC MTU Colocation, Rack XX, Moscow, Russia
+syscontact adm@itmm.ru, +7-495-363-1100
+
+###############################################################################
+# Process checks.
+###############################################################################
+
+#proc sendmail 10 1
+
+proc "cron"
+proc "master"
+proc "ntpd"
+proc "named"
+proc "ladvd"
+{% if ansible_distribution_release.find("9.1") == 0 %}
+proc "rsyslogd"
+{% else %}
+proc "syslogd"
+{% endif %}
+
+###############################################################################
+# Executables/scripts
+###############################################################################
+
+#exec echotest /bin/echo hello world
+
+exec raidmon /root/bin/check_disks.pl
+exec tempmon /root/bin/check_stuff.py -t
+
+###############################################################################
+# disk checks
+###############################################################################
+
+disk /          80%
+disk /usr       80%
+disk /var       80%
+disk /logs      80%
+disk /tmp       80%
+
+{% for partition in ansible_mounts %}
+{% if 'www' in partition["mount"] or 'backup' in partition["mount"] %}
+disk {{ partition["mount"] }}       99%
+{% endif %}
+{% endfor %}
+
+###############################################################################
+## project related stuff
+###############################################################################
+
+{% for group in group_names %}
+{% include 'roles/' ~ group ~ '/templates/snmpd.conf.j2' ignore missing %}
+{% endfor %}

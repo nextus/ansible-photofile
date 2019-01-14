@@ -1,0 +1,18 @@
+---
+
+#- name: Create service user
+#  user: name=w3disk uid=6670 createhome=yes shell=/bin/csh comment="service login for disk.qip.ru"
+
+- name: Set authorized keys for service user
+  authorized_key: user=w3disk key="ssh-rsa AAAAB3NzaC1yc2EAAAABIwAAAQEAwgN7siY8GRYwa95SagmgPNQykDMSlWb7we+CIPNYPtiLn2fLXsK1HHvFdpd1Cnkn1ZV9JoFDJqKNPqwFrIdKSW9wPgFT79C+0GxQOXUrAiqpB0gRJgO+fMNuOFOxLQpMG/LNgSLhNwz6An03lM4iWacCl9Rls4f1EPyI+az4XlMaP+NirVN35T15ikJw/PDk020hrHNI1yo9xa4EvHTN9JCM+Hk2oSiUwTUjhWJpS0LSDZtrwdak83r5jNguTc7qZriTNPQxAteVPWJRKfFtxKo/vPdX99iF4hhcpFZ20gFPzBFs70TZWEQ7upMeULbOoeJPIJ/jHDunTree7ccbSw== w3disk@dev2.pochta.ru"
+
+- name: Copy logroate script for mk
+  copy: src=mk dest=/etc/logrotate.d/mk owner=root group=wheel mode=0644
+
+- name: Enable autostart for useful daemons
+  service: name={{ item }} enabled=yes
+  with_items:
+    - disk-nginx
+    - disk-kernel
+    - nginx
+    - nginx_8080

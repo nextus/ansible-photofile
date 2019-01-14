@@ -1,0 +1,10 @@
+---
+
+- name: deploy configration into shot backup storages
+  hosts: shot_backups
+  sudo: yes
+  vars_files:
+    - "group_vars/{{ ansible_system }}.yml"
+  roles:
+    - shot_backups
+

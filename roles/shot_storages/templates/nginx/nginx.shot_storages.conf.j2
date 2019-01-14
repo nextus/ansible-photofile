@@ -1,0 +1,178 @@
+{% include 'templates/banner.j2' %}
+
+    map $http_host $hostnum {
+        ex001.photofile.ru  w;
+        ex002.photofile.ru  w2;
+        ex003.photofile.ru  w3;
+        ex004.photofile.ru  w4;
+        ex005.photofile.ru  w5;
+        ex006.photofile.ru  w6;
+    }
+   
+    geo $geo_block {
+        default XX;
+        include worldip.conf;
+    }
+ 
+    server {
+        listen      {{ ansible_default_ipv4["address"] }};
+        server_name {{ SHOT_STORAGE }}.photofile.ru;
+
+        access_log  {{ SHOT_DAV_LOGS }}/{{ NGINX_ACCESS_LOG }};
+        error_log   {{ SHOT_DAV_LOGS }}/{{ NGINX_ERROR_LOG }};
+
+        set $www_root "/www/{{ SHOT_STORAGE }}.photofile.ru/data/photo";
+        error_page 404 =200 /no.gif;
+        client_max_body_size 10m;
+        autoindex off;
+
+        location /no.gif {
+            root $www_root/;
+        }
+        location /favicon.ico {
+            root $www_root/;
+        }
+
+        if ( $http_referer ~* www.dfhg.info|c1518.drleeuk.com|pp2.mymihost.com|74.55.154.140|208.98.17.139|se.5qqcc.com|se.126wyt.com|sos.77box.com|69.4.239.125|ent.6park.com|uang.dizhi.info|la-forum.org|f.18sp.net|se.5qqcc.com|61.tok77.info|pp2.mymihost.com|61.tok77.net|d.18sp.net|c1518.drleeuk.com|sos.77box.com|74.55.154.140|se.1234cao.com|75.125.41.18|se.caox777.com|1.17xx.info|1.555mi.com|2.psbbs.info|208.101.9.11|210.6.90.226:8002|3.sewowobbs.info|3.xiaoxiao77.com|53cao.921k.com|64.191.64.104|64.191.64.105|66.90.105.184|67.21.95.200|67.213.222.3|69.4.236.205|69.4.239.125|70.85.48.245|74.222.23.198|75.125.227.117|8.bbsps.info|927mm.921k.com|97.126wyt.com|97.163wyt.com|97.700wyt.com|97.haowyt.com|98.126.33.114|a.f5nn.com|a.f6nn.com|a1.pinsix.com|b.cnc.qzone.qq.com|bb.771kk.com|bb.ct.kz|bt.1234bt.com|bt.aisex.com|c.mayaba.com|c1518.drleeuk.com|caox777.com|cn.93bb.info|cn.golcyl.info|d.mayadiy.com|f.bbsnice.com|h.a88a.com|hao.23aabb.com|j.psbbs.info|jj.pin6.biz|l.bbsps.info|ll.pin6.biz|mm.700wyt.com|n.yourmaya.com|nn.7000se.com|pic.360gan.com|se.1234cao.com|se.1234kk.com|se.1234wyt.com|se.126wyt.com|se.15smm.com|se.163wyt.com|se.30sss.com|se.4ffdd.com|se.4qqww.com|se.5qqcc.com|se.5zzxx.com|se.700wyt.com|se.7gghh.com|sex52sex.com|sex52sex.net|sqwyt.88fv.com|t66y.com|tupian.5154bbs.net|www.126wyt.com|www.166pp.com|www.17cmm.com|www.22sese.com|www.345xb.com|www.38sz.info|www.456yin.com|www.567dx.com|www.67gao.com|www.6u666.com|www.78ai.com|www.886pp.com|www.92kkkk.com|www.97rrb.com|www.97wenwen.com|www.ahezi.info|www.caob1.cn|www.city9x.com|www.crqbz.cn|www.dd2xx.com|www.ganwyt.com|www.mmko.info|www.mmpp456.com|www.msngulu.com|www.niwyt.com|www.palacemoon.com|www.sese33.info|www.xmmnnbb.com|www.yuyu511.info|pstang.info|pstang.com|bb2.atbb.jp ) {
+            return 204;
+        }
+        location ~ '^/[0-9a-f]{21}[0-9]{11}[0-9]{3}002' {
+            # Be accurate here: --------------------------------^^^
+            rewrite ^/((([a-f0-9])[a-f0-9])[a-f0-9])[a-f0-9]*/(.*)$ /$3/$2/$1/$4 break;
+            root $www_root;
+        }
+
+        location ~ '^/expressphoto/[0-9a-f]{21}[0-9]{11}[0-9]{3}002' {
+            # Be accurate here: --------------------------------^^^
+            rewrite ^/expressphoto/((([a-f0-9])[a-f0-9])[a-f0-9])[a-f0-9]*/(.*)$ /$3/$2/$1/$4 break;
+            root $www_root;
+        }
+
+        location ~ '^/[0-9a-zA-Z]/[0-9a-zA-Z]{2}/[0-9a-zA-Z]{3}/' {
+            root $www_root;
+            client_body_temp_path /www/{{ SHOT_STORAGE }}.photofile.ru/data/temp;
+
+#            rewrite ^/action/[0-9]+/(.+)$ /$1 break;
+            rewrite ^/action / break;
+
+            dav_methods PUT DELETE;
+
+            create_full_put_path on;
+            dav_access user:rw group:rw all:r;
+
+            limit_except GET {
+                allow   127.0.0.1;       #
+                allow   195.239.111.204; # web1.shot.qip.ru
+                allow   195.239.86.104;  # web2.shot.qip.ru
+                allow   80.68.242.219;   # dev2.pochta.ru
+                deny    all;
+            }
+        }
+
+        #if ($request_uri ~* "/[0-9a-zA-Z]([0-9a-zA-Z]{3})((([0-9a-zA-Z])[0-9a-zA-Z])[0-9a-zA-Z])\.(jpg|gif|png)$") {
+        if ($request_uri ~* "/[0-9a-zA-Z]([0-9a-zA-Z]{3,})((([0-9a-zA-Z])[0-9a-zA-Z])[0-9a-zA-Z])\.(jpg|gif|png)$") {
+                set $photo_file /$4/$3/$2/$1$2.$5;
+                set $photo_file_sm /$4/$3/$2/small/$1$2.$5;
+                set $photo_mod $www_root/$4/$3/$2/$1$2.mod;
+        }
+
+        if (-f $photo_mod) {
+                set $photo_file /mod.gif;
+                set $photo_file_sm /mod.gif;
+        }
+
+        location ^~/mod.gif {
+                root $www_root/;
+        }
+
+        #location ~ "^/[0-9a-zA-Z]([0-9a-zA-Z]{3})((([0-9a-zA-Z])[0-9a-zA-Z])[0-9a-zA-Z])\.(jpg|gif|png)$" {
+        location ~ "^/[0-9a-zA-Z]([0-9a-zA-Z]{3,})((([0-9a-zA-Z])[0-9a-zA-Z])[0-9a-zA-Z])\.(jpg|gif|png)$" {
+                #rewrite "^/[0-9a-zA-Z]([0-9a-zA-Z]{3})((([0-9a-zA-Z])[0-9a-zA-Z])[0-9a-zA-Z])\.(jpg|gif|png)$" $photo_file;
+                rewrite "^/[0-9a-zA-Z]([0-9a-zA-Z]{3,})((([0-9a-zA-Z])[0-9a-zA-Z])[0-9a-zA-Z])\.(jpg|gif|png)$" $photo_file;
+                root $www_root;
+        }
+
+        #location ~ "^/small/[0-9a-zA-Z]([0-9a-zA-Z]{3})((([0-9a-zA-Z])[0-9a-zA-Z])[0-9a-zA-Z])\.(jpg|gif|png)$" {
+        location ~ "^/small/[0-9a-zA-Z]([0-9a-zA-Z]{3,})((([0-9a-zA-Z])[0-9a-zA-Z])[0-9a-zA-Z])\.(jpg|gif|png)$" {
+                #rewrite "^/small/[0-9a-zA-Z]([0-9a-zA-Z]{3})((([0-9a-zA-Z])[0-9a-zA-Z])[0-9a-zA-Z])\.(jpg|gif|png)$" $photo_file_sm;
+                rewrite "^/small/[0-9a-zA-Z]([0-9a-zA-Z]{3,})((([0-9a-zA-Z])[0-9a-zA-Z])[0-9a-zA-Z])\.(jpg|gif|png)$" $photo_file_sm;
+                root $www_root;
+        }
+    }
+
+   server {
+        listen      {{  ansible_default_ipv4["address"] }};
+        server_name f{{ SHOT_STORAGE_ID }}.s.qip.ru;
+
+        access_log  {{ SHOT_LOGS }}/{{ NGINX_ACCESS_LOG }};
+        error_log   {{ SHOT_LOGS }}/{{ NGINX_ERROR_LOG }};
+
+        set $www_root "/www/{{ SHOT_STORAGE }}.photofile.ru/data/photo";
+        error_page 404 =200 /no.gif;
+        client_max_body_size 10m;
+        autoindex off;
+
+        open_file_cache          max=1000 inactive=30s;
+        open_file_cache_valid    5m;
+        open_file_cache_min_uses 5;
+        open_file_cache_errors   on;
+
+        expires 7d;
+
+        ######GEO######
+        set $not_block 1;
+        if ($geo_block = CN) { set $not_block 0; } #China
+        #if ($geo_block = ) { set $not_block 0; } #
+        if ($geo_block = XX) { set $not_block 1; } #Unknown, unallocated or no trace
+        if ($not_block = 0) { return 403; }
+        ###############
+
+        location / {
+            rewrite ^(.*)$ http://shot.qip.ru/ permanent;
+        }
+
+        location /no.gif {
+                root $www_root/;
+        }
+
+        location /favicon.ico {
+                root $www_root/;
+        }
+
+        if ($request_uri ~* "/~([0-9a-zA-Z]{4,})((([0-9a-zA-Z])[0-9a-zA-Z])[0-9a-zA-Z])\.(jpg|gif|png)$") {
+                set $photo_file /$4/$3/$2/$1$2.$5;
+                set $photo_file_sm /$4/$3/$2/small/$1$2.$5;
+        }
+
+        location ~ "^/~([0-9a-zA-Z]{4,})((([0-9a-zA-Z])[0-9a-zA-Z])[0-9a-zA-Z])\.(jpg|gif|png)$" {
+                rewrite "^/~([0-9a-zA-Z]{4,})((([0-9a-zA-Z])[0-9a-zA-Z])[0-9a-zA-Z])\.(jpg|gif|png)$" $photo_file_sm break;
+                root $www_root;
+        }
+
+        if ($request_uri ~* "/([0-9a-zA-Z]{4,})((([0-9a-zA-Z])[0-9a-zA-Z])[0-9a-zA-Z])\.(jpg|gif|png)$") {
+                set $photo_file /$4/$3/$2/$1$2.$5;
+                set $photo_file_sm /$4/$3/$2/s/$1$2.$5;
+        }
+
+        location ~ "^/([0-9a-zA-Z]{4,})((([0-9a-zA-Z])[0-9a-zA-Z])[0-9a-zA-Z])\.(jpg|gif|png)$" {
+                rewrite "^/([0-9a-zA-Z]{4,})((([0-9a-zA-Z])[0-9a-zA-Z])[0-9a-zA-Z])\.(jpg|gif|png)$" $photo_file break;
+                root $www_root;
+        }
+        if ($request_uri ~* "/([0-9a-zA-Z]{3})((([0-9a-zA-Z])[0-9a-zA-Z])[0-9a-zA-Z])\.(jpg|gif|png)$") {
+                set $photo_file /$4/$3/$2/$1$2.$5;
+                set $photo_file_sm /$4/$3/$2/small/$1$2.$5;
+        }
+
+        location ~ "^/([0-9a-zA-Z]{3})((([0-9a-zA-Z])[0-9a-zA-Z])[0-9a-zA-Z])\.(jpg|gif|png)$" {
+                rewrite "^/([0-9a-zA-Z]{3})((([0-9a-zA-Z])[0-9a-zA-Z])[0-9a-zA-Z])\.(jpg|gif|png)$" $photo_file break;
+                root $www_root;
+        }
+        if ($request_uri ~* "/~([0-9a-zA-Z]{3})((([0-9a-zA-Z])[0-9a-zA-Z])[0-9a-zA-Z])\.(jpg|gif|png)$") {
+                set $photo_file /$4/$3/$2/$1$2.$5;
+                set $photo_file_sm /$4/$3/$2/small/$1$2.$5;
+        }
+        location ~ "^/~([0-9a-zA-Z]{3})((([0-9a-zA-Z])[0-9a-zA-Z])[0-9a-zA-Z])\.(jpg|gif|png)$" {
+                rewrite "^/~([0-9a-zA-Z]{3})((([0-9a-zA-Z])[0-9a-zA-Z])[0-9a-zA-Z])\.(jpg|gif|png)$" $photo_file_sm break;
+                root $www_root;
+        }
+    }

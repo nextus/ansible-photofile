@@ -1,0 +1,61 @@
+---
+
+- name: Create service user
+  user: name=fstorage uid=6672 createhome=yes shell=/bin/bash comment="service login for fs*.qip.ru" group=w3fstorage groups=www
+
+- name: Set authorized keys for service user
+  authorized_key: user=fstorage key="ssh-dss AAAAB3NzaC1kc3MAAACBAJX7Ngxg496Hr0HFsY0mY2z25Pt+mtXcDIbV0vs0avU2sUkVw45RkeHhgK4Vpf0sQY0cs0NBuZyvO4YItOn5+wKkw7bFiYYRZ8Y9/CBXSCxF93QUqCqINEKngkw7t449ND8ptoAOwj8AXmMOVaMExoTsNr+GgVZzIQG9eoWEFupbAAAAFQCSDiYwwpnTFM7JTT6X11oTBZ3beQAAAIAdDU1G0gL/TCTtNYubpNneI2lrFP/Ywi/4gpMBfVT+OHdBSpmDQOma1k/rlChUzGI6sW6esdey9wqH1kkJW8PSvI/7S+45SCKSBZjyqpI5M5WLZ4XyEZ12LruMEovjs9HDh7HoFxv7lLw6mYYz2FJcHv9EmdAChgV3Eho/W5Y/dwAAAIAWtLixQ2/yBLB3t3GDYdVB7MrfAZHL76sYTfBDGBr8wyNyhPA4A5UPTnQ9L+hrHtcWdfpe3bB+pwKNe8jNpg6dR4IveH78s1rvPdL7FrdNr5MPV0Q0f6xGuNrU8aMAG5oqT75WnCExVOvUMEQtZOEeTdl6bEg16pkcpEP5zZGDbQ== plukyanchuk@dev2.pochta.ru"
+
+- name: Create directories for logs
+  file: path={{ item }} owner=root group=wheel mode=0775 state=directory
+  with_items:
+    - $FS_STATIC_LOGS
+    - $FS_INTERNAL_LOGS
+  tags:
+    - nginx
+    - www
+
+- name: Set permissions for production dirs
+  file: path=/www/fs.internal.qip.ru owner=fstorage group=w3fstorage mode=0775 state=directory
+  with_items: FS
+
+- name: Set default tmp dif for nginx
+  file: path=/www/tmp/nginx owner=www group=www mode=0777 state=directory
+
+- name: Deploy nginx conf
+  template: src=nginx/{{ item }}.j2 dest=/usr/local/nginx/conf/{{ item }} backup=no owner=root group=wheel mode=444
+  with_items:
+    - allow_internal.conf
+    - nginx.fs-internal.conf
+    - nginx.fs-internal.loc.conf
+    - nginx.conf
+  notify:
+    - reload nginx
+  tags:
+    - nginx
+    - www
+
+- name: Copy nginx init.d file
+  template: src=templates/init.nginx.j2 dest=/etc/init.d/nginx backup=no owner=root group=wheel mode=755
+  when: ansible_system == "Linux"
+  tags:
+    - nginx
+    - www
+
+- name: Create directory for default vhost
+  file: path=/www/{{ inventory_hostname }} owner=root group=wheel mode=0775 state=directory
+  tags:
+    - nginx
+    - www
+
+- name: Enable autostart nginx
+  service: name=nginx enabled=yes
+  tags:
+    - nginx
+    - www
+
+- name: Run nginx
+  service: name=nginx state=started
+  tags:
+    - nginx
+    - www

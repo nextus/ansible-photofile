@@ -1,0 +1,53 @@
+---
+
+- name: reglament stuff
+  hosts: all
+  sudo: yes
+  vars_files:
+    - "group_vars/{{ ansible_system }}.yml"
+    - "roles/shot_storages/vars/main.yml"
+  roles:
+    - reglament
+  tags:
+    - reglament
+    - ff_frontends
+    - ff_backends
+    - ff_db
+    - ff_storages
+    - ff_backups
+    - shot_storages
+    - shot_backups
+    - shot_backends
+    - fs_storages
+    - fs_frontends
+    - fs_backends
+    - disk_backends
+    - disk_storages
+
+- include: centraal.yml tags=centraal
+
+- include: ff_frontends.yml tags=ff_frontends
+
+- include: ff_backends.yml tags=ff_backends
+
+- include: ff_db.yml tags=ff_db
+
+- include: ff_storages.yml tags=ff_storages
+
+- include: ff_backups.yml tags=ff_backups
+
+- include: shot_storages.yml tags=shot_storages
+
+- include: shot_backends.yml tags=shot_backends
+
+- include: shot_backups.yml tags=shot_backups
+
+- include: fs_storages.yml tags=fs_storages
+
+- include: fs_frontends.yml tags=fs_frontends
+
+- include: fs_backends.yml tags=fs_backends
+
+- include: disk_backends.yml tags=disk_backends
+
+- include: disk_storages.yml tags=disk_storages

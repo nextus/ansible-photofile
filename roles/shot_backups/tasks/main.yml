@@ -1,0 +1,16 @@
+---
+
+- name: Create specific user for backup purpose
+  user: name={{ BACKUP_USER }} uid=6690 createhome=no home=/nonexistent shell=/bin/nologin comment="Shot.qip.ru Backup User"
+
+- name: Create rsync-status file
+  copy: content= dest=/tmp/rsync-backup owner={{ BACKUP_USER }} group={{ BACKUP_USER }} mode=644 force=no
+
+- name: Create directory for backups
+  file: path=/www/{{ SHOT_STORAGE_BACKUP }}.photofile.ru-backup/data/photo/ owner={{ BACKUP_USER }} group=wheel mode=0775 state=directory
+
+- name: Set appropriate permissions for rsync-status file
+  file: path=/tmp/rsync-backup owner={{ BACKUP_USER }} group={{ BACKUP_USER }} mode=644
+
+- name: Deploy rsync.sh script
+  template: src=rsync/rsync.sh.j2 dest=/root/bin/rsync.sh backup=no owner=root group=wheel mode=0755

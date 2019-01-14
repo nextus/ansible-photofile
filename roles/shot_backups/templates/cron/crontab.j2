@@ -1,0 +1,5 @@
+{% if DISABLE_BACKUP|default('NO') != "YES" %}
+MAILTO={{ CRON_MAIL }}
+{{ RSYNC_TIME.split(':')[1]|int(3) }}       {{ RSYNC_TIME.split(':')[0]|int(30) }}       *       *       *       root    /root/bin/rsync.sh > /tmp/rsync-backup 2>&1
+{% endif %}
+

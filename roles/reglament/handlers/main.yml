@@ -1,0 +1,65 @@
+---
+
+- name: reload sshd
+  service: name=sshd state=reloaded
+
+- name: reload prelink
+  command: prelink -ua
+
+- name: reload sysctl
+  service: name=sysctl state=reloaded
+  when: ansible_system == "FreeBSD"
+
+- name: reload sysctl
+  command: /sbin/sysctl -q -p
+  when: ansible_system == "Linux"
+
+- name: restart rsyslog
+  service: name=rsyslog state=restarted
+  when: ansible_system == "Linux"
+
+- name: restart rsyslog
+  service: name=rsyslogd state=restarted
+  when: ansible_system == "FreeBSD"
+
+- name: restart snmpd
+  service: name=snmpd state=restarted
+
+- name: restart ntp
+  service: name=ntpd state=restarted
+
+- name: restart ladvd
+  service: name=ladvd state=restarted
+  when: ansible_system == "Linux"
+
+- name: restart nslcd
+  service: name=nslcd state=restarted
+  when: ansible_system == "Linux"
+
+- name: restart ladvd
+  command: /usr/local/etc/rc.d/ladvd.sh restart
+  when: ansible_system == "FreeBSD"
+
+- name: reload firewall
+  command: /etc/ipfw.rules
+  when: ansible_system == "FreeBSD" and bsd_firewall == "ipfw"
+
+- name: reload firewall
+  command: sh /root/bin/fw.sh
+  when: ansible_system == "Linux"
+
+- name: reload postfix
+  command: newaliases
+
+- name: reload postfix
+  service: name=postfix state=restarted
+
+- name: restart bind
+  service: name=named state=restarted
+
+- name: update hostname
+  command: /bin/hostname {{ inventory_hostname }}
+  notify: 
+    - restart snmpd
+    - restart ladvd
+    - restart nslcd

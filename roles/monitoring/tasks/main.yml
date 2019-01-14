@@ -1,0 +1,8 @@
+---
+
+- name: Generate new photo.qip.ru config for icinga
+  template: src=cfg.photofile.j2 dest=/tmp/cfg.photofile backup=no mode=0644
+
+- name: Generate new shot.qip.ru config for icinga
+  template: src=cfg.shot.j2 dest=/tmp/cfg.shot backup=no mode=0644
+

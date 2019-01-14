@@ -1,0 +1,11 @@
+/logs/disk-kernel/*.log {
+    daily
+    rotate 14
+    compress
+    sharedscripts
+    dateext
+    missingok
+    postrotate
+        /usr/bin/killall -HUP rsyslogd
+    endscript
+}

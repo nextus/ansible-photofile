@@ -1,0 +1,122 @@
+ServerRoot "{{ APACHE_ROOT_DIR }}"
+PidFile {{ APACHE_PID }}
+Timeout 30
+KeepAlive Off
+StartServers 2
+MinSpareServers 2
+MaxSpareServers 8
+MaxClients 64
+MaxRequestsPerChild 8192
+
+Listen {{ ansible_default_ipv4["address"] }}:80
+
+LoadModule authz_host_module modules/mod_authz_host.so
+LoadModule log_config_module modules/mod_log_config.so
+LoadModule mime_magic_module modules/mod_mime_magic.so
+LoadModule mime_module modules/mod_mime.so
+LoadModule status_module modules/mod_status.so
+LoadModule dir_module modules/mod_dir.so
+LoadModule rewrite_module modules/mod_rewrite.so
+LoadModule rpaf_module modules/mod_rpaf-2.0.so
+LoadModule php5_module        modules/libphp5.so
+
+ExtendedStatus On
+User www
+Group www
+ServerAdmin root@itmm.ru
+ServerName {{ inventory_hostname }}
+UseCanonicalName Off
+ServerTokens Prod
+ServerSignature Off
+
+LogLevel warn
+ErrorLog {{ LOG_DIR }}/{{ APACHE_ERROR_LOG }}
+LogFormat "%h %l %u %t \"%r\" %>s %b " common
+
+DefaultType text/plain
+
+UseCanonicalName On
+HostnameLookups Off
+
+DocumentRoot "/www/{{ inventory_hostname }}"
+
+<Directory />
+    AllowOverride None
+    Order Deny,Allow
+    Deny from all
+</Directory>
+
+<Directory "/www">
+    Options FollowSymLinks
+    AllowOverride None
+    Order deny,allow
+    Allow from all
+</Directory>
+
+<Files ~ "^\.ht">
+
+    Order allow,deny
+    Deny from all
+</Files>
+
+<IfModule mod_dir.c>
+    DirectoryIndex index.php
+</IfModule>
+
+<IfModule mod_autoindex.c>
+IndexIgnore .??* *~ *# HEADER* README* RCS CVS *,v *,t
+</IfModule>
+
+
+<IfModule mod_mime.c>
+TypesConfig conf/mime.types
+AddType application/x-compress .Z
+AddType application/x-tar .tgz
+AddType application/x-gzip .gz .tgz
+AddType application/x-httpd-php .php
+</IfModule>
+
+<IfModule mod_mime_magic.c>
+MIMEMagicFile conf/magic
+</IfModule>
+
+<IfModule mod_status.c>
+        ExtendedStatus On
+    <Location /server-status>
+        SetHandler server-status
+        Order deny,allow
+        Deny from all
+        Allow from 80.68.252.0/22 80.68.240.0/20 80.68.244.32/27 195.239.111.184/32 195.68.160.213/32
+    </Location>
+</IfModule>
+
+RPAFenable On
+RPAFproxy_ips 195.239.111.45 195.239.111.46 195.68.160.129
+
+###########################################
+NameVirtualHost {{ ansible_default_ipv4["address"] }}:80
+###########################################
+
+<VirtualHost {{ ansible_default_ipv4["address"] }}:80>
+        ServerName {{ inventory_hostname }}
+        DocumentRoot /www/{{ inventory_hostname }}
+        DirectoryIndex index.php
+</VirtualHost>
+
+<VirtualHost {{ ansible_default_ipv4["address"] }}:80>
+    ServerName fstorage.relax.ru
+    ServerAlias fstorage.itmm.ru
+    ServerAlias fs.internal.qip.ru
+    ServerAlias fs.internal.itmm.ru
+
+    DocumentRoot /www/fs.internal.qip.ru/root/htdocs
+#    ErrorDocument 404 /404.htm
+
+    ErrorLog {{ FS_INTERNAL_LOGS }}/{{ APACHE_ERROR_LOG }}
+    TransferLog {{ FS_INTERNAL_LOGS }}/{{ APACHE_ACCESS_LOG }}
+
+    php_value memory_limit 2G
+    php_value post_max_size 550M
+    php_value upload_max_filesize 550M
+</VirtualHost>
+

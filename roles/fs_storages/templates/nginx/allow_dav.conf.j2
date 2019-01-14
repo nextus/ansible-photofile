@@ -1,0 +1,14 @@
+{% include 'templates/banner.j2' %}
+
+limit_except GET { 
+    allow 80.68.242.219/32; 
+    allow 195.239.111.152; # dit.relax.ru
+    allow 195.68.160.129; 
+    allow 195.68.160.11;
+    allow 195.68.160.208; # buna.relax.ru
+    allow 195.68.160.205; # klen.relax.ru
+    allow 195.239.111.94; # redwood.relax.ru
+    allow 195.68.160.213; # drova.relax.ru
+    deny all;
+}
+

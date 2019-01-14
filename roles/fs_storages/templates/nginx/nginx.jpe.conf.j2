@@ -1,0 +1,13 @@
+{% include 'templates/banner.j2' %}
+
+{% import "nginx.jpe.mainserver.conf.j2" as template with context %}
+
+{% for prt in FS %}
+{% set jpe = jpe_ip.results[loop.index0].stdout %}
+{% set qipim = qipim_ip.results[loop.index0].stdout %}
+{% set qip = qip_ip.results[loop.index0].stdout %}
+
+{{ template.input(prt,jpe,qipim,qip) }}
+
+{% endfor %}
+

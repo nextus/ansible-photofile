@@ -1,0 +1,22 @@
+# $FreeBSD: src/etc/csh.cshrc,v 1.3.56.1.6.1 2010/12/21 17:09:25 kensmith Exp $
+#
+# System-wide .cshrc file for csh(1).
+
+{% include 'templates/banner.j2' %}
+
+[ "`id -gn`" = "`id -un`" -a `id -u` -gt 1023 ]
+if $status then
+        umask 022
+else
+        umask 002
+endif
+
+setenv LC_CTYPE "ru_RU.CP1251"
+setenv LC_COLLATE "ru_RU.CP1251"
+setenv FTP_PASSIVE_MODE "yes"
+
+setenv WRKDIRPREFIX /usr/local/ports/work
+setenv PKG_PATH /usr/ports/packages
+setenv PORTS_DBDIR /usr/local/ports
+setenv DISTDIR /usr/local/ports/distfiles
+

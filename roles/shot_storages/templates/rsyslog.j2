@@ -1,0 +1,33 @@
+# Send access logs by nginx
+#$InputFileName {{ SHOT_LOGS }}/{{ NGINX_ACCESS_LOG }}
+#$InputFileTag shot-storages:
+#$InputFileStateFile {{ NGINX_ACCESS_LOG }}.{{ SHOT_LOGS | basename }}.rlog
+#$InputFileSeverity info
+#$InputFileFacility local0
+#$InputRunFileMonitor
+#
+## Send dav access logs by nginx
+#$InputFileName {{ SHOT_DAV_LOGS }}/{{ NGINX_ACCESS_LOG }}
+#$InputFileTag shot-dav-storages:
+#$InputFileStateFile {{ NGINX_ACCESS_LOG }}.{{ SHOT_DAV_LOGS | basename }}.rlog
+#$InputFileSeverity info
+#$InputFileFacility local0
+#$InputRunFileMonitor
+#
+## Send error logs by nginx
+#$InputFileName {{ SHOT_LOGS }}/{{ NGINX_ERROR_LOG }}
+#$InputFileTag shot-storages:
+#$InputFileStateFile {{ NGINX_ERROR_LOG }}.{{ SHOT_LOGS | basename }}.rlog
+#$InputFileSeverity error
+#$InputFileFacility local0
+#$InputRunFileMonitor
+#
+## Send dav error logs by nginx
+#$InputFileName {{ SHOT_DAV_LOGS }}/{{ NGINX_ERROR_LOG }}
+#$InputFileTag shot-dav-storages:
+#$InputFileStateFile {{ NGINX_ERROR_LOG }}.{{ SHOT_DAV_LOGS | basename }}.rlog
+#$InputFileSeverity error
+#$InputFileFacility local0
+#$InputRunFileMonitor
+#
+

@@ -1,0 +1,320 @@
+[client]
+port                            = 3306
+socket                          = /tmp/mysql.sock
+
+[mysqld1]
+#skip-slave-start
+#skip-locking
+skip-name-resolve
+#old-passwords
+port                            = 3306
+user                            = mysql
+socket                          = /tmp/mysql.sock
+log-output                      = FILE
+basedir                         = /usr
+datadir                         = /www/db
+tmpdir                          = /www/tmp/mysql
+symbolic-links                  = 0
+#log                             = /logs/mysql/query_log
+log-error                       = /logs/mysql/mysql 
+log-slow-queries                = /logs/mysql/mysql-slow.log
+long_query_time                 = 2
+
+server-id                       = 213
+relay-log                       = mysql-bin
+master-host                     = mysql2.photofile.ru
+master-port                     = 3308
+master-user                     = replication
+master-password                 = hidden
+master-connect-retry            = 10
+expire_logs_days                = 14
+
+innodb_file_per_table
+innodb_buffer_pool_size         = 10240M
+innodb_additional_mem_pool_size = 100M
+innodb_flush_log_at_trx_commit  = 0
+
+default-storage-engine          = MyISAM
+
+key_buffer_size                 = 192M
+myisam-recover                  = BACKUP,FORCE
+#delay_key_write                 = ALL
+
+max_connections                 = 1024          # 100
+max_connect_errors              = 10000         # 10
+thread_cache_size               = 8             # 0 
+table_cache                     = 2048          # 64
+max_allowed_packet              = 64M           # 1M
+myisam_sort_buffer_size         = 32M           # 8M
+#sort_buffer_size                = 4M            # 2M
+read_buffer_size                = 256K          # 128K
+read_rnd_buffer_size            = 512K          # 256K
+tmp_table_size                  = 64M           # 32M
+#max_seeks_for_key              = 8192          # 4bil
+query_cache_size                = 8M            # 0
+max_write_lock_count            = 8             # 4bil
+
+[mysqld2]
+#skip-slave-start
+skip-locking
+skip-name-resolve
+skip-innodb
+#old-passwords
+port                            = 3307
+user                            = mysql
+socket                          = /tmp/mysql2.sock
+log-output                      = FILE
+basedir                         = /usr
+datadir                         = /www/db2
+tmpdir                          = /www/tmp/mysql2
+symbolic-links                  = 0
+#log                             = /logs/mysql/query2_log
+log-error                       = /logs/mysql/mysql2
+log-slow-queries                = /logs/mysql/mysql2-slow.log
+long_query_time                 = 2
+
+server-id                       = 212
+relay-log                       = mysql-bin-relay
+master-host                     = mysql20.photofile.ru
+master-user                     = replication
+master-port			            = 3307
+master-password                 = hidden
+master-connect-retry            = 10
+replicate-do-db                 = photofile_part
+replicate-do-db                 = express_part
+slave_skip_errors               = 1053,1062,1146
+expire_logs_days                = 14
+
+default-storage-engine          = MyISAM
+
+key_buffer_size                 = 192M
+myisam-recover                  = BACKUP,FORCE
+#delay_key_write                 = ALL
+
+max_connections                 = 1024          # 100
+max_connect_errors              = 10000         # 10
+thread_cache_size               = 64             # 0
+table_cache                     = 2048          # 64
+max_allowed_packet              = 64M            # 1M
+myisam_sort_buffer_size         = 32M           # 8M
+#sort_buffer_size                = 4M            # 2M
+read_buffer_size                = 256K            # 128K
+read_rnd_buffer_size            = 512K          # 256K
+tmp_table_size                  = 64M           # 32M
+#max_seeks_for_key               = 8192          # 4bil
+query_cache_size                = 8M            # 0
+max_write_lock_count            = 8             # 4bil
+
+[mysqld3]
+#skip-slave-start
+skip-locking
+skip-name-resolve
+skip-innodb
+#old-passwords
+port                            = 3308
+user                            = mysql
+socket                          = /tmp/mysql3.sock
+log-output                      = FILE
+basedir                         = /usr
+datadir                         = /www/db3
+tmpdir                          = /www/tmp/mysql3
+symbolic-links                  = 0
+#log                            = /logs/mysql/query3_log
+log-error                       = /logs/mysql/mysql3
+#log-slow-queries                = /logs/mysql/mysql3-slow.log
+long_query_time                 = 2
+
+server-id                       = 213
+relay-log                       = mysql-bin-relay
+master-host                     = mysql20.photofile.ru
+master-user                     = replication
+master-port			            = 3308
+master-password                 = hidden
+master-connect-retry            = 10
+replicate-do-db                 = photofile_part
+replicate-do-db                 = express_part
+slave_skip_errors               = 1053,1062,1146
+expire_logs_days                = 14
+
+default-storage-engine          = MyISAM
+
+key_buffer_size                 = 192M
+myisam-recover                  = BACKUP,FORCE
+#delay_key_write                 = ALL
+
+max_connections                 = 1024          # 100
+max_connect_errors              = 10000         # 10
+thread_cache_size               = 64            # 0
+table_cache                     = 2048          # 64
+max_allowed_packet              = 64M           # 1M
+myisam_sort_buffer_size         = 32M           # 8M
+#sort_buffer_size                = 4M            # 2M
+read_buffer_size                = 256K          # 128K
+read_rnd_buffer_size            = 512K          # 256K
+tmp_table_size                  = 64M           # 32M
+#max_seeks_for_key              = 8192          # 4bil
+query_cache_size                = 8M            # 0
+max_write_lock_count            = 8             # 4bil
+
+[mysqld4]
+#skip-slave-start
+skip-locking
+skip-name-resolve
+skip-innodb
+#old-passwords
+port                            = 3309
+user                            = mysql
+socket                          = /tmp/mysql4.sock
+log-output                      = FILE
+basedir                         = /usr
+datadir                         = /www/db4
+tmpdir                          = /www/tmp/mysql4
+symbolic-links                  = 0
+#log                             = /logs/mysql/query4_log
+log-error                       = /logs/mysql/mysql4
+log-slow-queries                = /logs/mysql/mysql4-slow.log
+long_query_time                 = 2
+
+server-id                       = 214
+relay-log                       = mysql-bin-relay
+master-host                     = mysql20.photofile.ru
+master-user                     = replication
+master-port			            = 3309
+master-password                 = hidden
+master-connect-retry            = 10
+replicate-do-db                 = photofile_part
+replicate-do-db                 = express_part
+slave_skip_errors               = 1053,1062,1146
+expire_logs_days                = 14
+
+default-storage-engine          = MyISAM
+
+key_buffer_size                 = 192M
+myisam-recover                  = BACKUP,FORCE
+#delay_key_write                 = ALL
+
+max_connections                 = 1024          # 100
+max_connect_errors              = 10000         # 10
+thread_cache_size               = 64             # 0
+table_cache                     = 2048          # 64
+max_allowed_packet              = 64M            # 1M
+myisam_sort_buffer_size         = 32M           # 8M
+#sort_buffer_size                = 4M            # 2M
+read_buffer_size                = 256K            # 128K
+read_rnd_buffer_size            = 512K          # 256K
+tmp_table_size                  = 64M           # 32M
+#max_seeks_for_key               = 8192          # 4bil
+query_cache_size                = 8M            # 0
+max_write_lock_count            = 8             # 4bil
+
+[mysqld5]
+#skip-slave-start
+skip-locking
+skip-name-resolve
+skip-innodb
+#old-passwords
+port                            = 3310
+user                            = mysql
+socket                          = /tmp/mysql5.sock
+log-output                      = FILE
+basedir                         = /usr
+datadir                         = /www/db5
+tmpdir                          = /www/tmp/mysql5
+symbolic-links                  = 0
+#log                            = /logs/mysql/query5_log
+log-error                       = /logs/mysql/mysql5
+#log-slow-queries                = /logs/mysql/mysql5-slow.log
+long_query_time                 = 2
+
+server-id                       = 215
+relay-log                       = mysql-bin-relay
+master-host                     = mysql20.photofile.ru
+master-user                     = replication
+master-port			            = 3310
+master-password                 = hidden
+master-connect-retry            = 10
+replicate-do-db                 = photofile_part
+slave_skip_errors               = 1053,1062,1146
+expire_logs_days                = 14
+
+default-storage-engine          = MyISAM
+
+key_buffer_size                 = 192M
+myisam-recover                  = BACKUP,FORCE
+#delay_key_write                = ALL
+
+max_connections                 = 1024          # 100
+max_connect_errors              = 10000         # 10
+thread_cache_size               = 64             # 0
+table_cache                     = 2048          # 64
+max_allowed_packet              = 64M            # 1M
+myisam_sort_buffer_size         = 32M           # 8M
+#sort_buffer_size                = 4M            # 2M
+read_buffer_size                = 256K            # 128K
+read_rnd_buffer_size            = 512K          # 256K
+tmp_table_size                  = 64M           # 32M
+#max_seeks_for_key               = 8192          # 4bil
+query_cache_size                = 8M            # 0
+max_write_lock_count            = 8             # 4bil
+
+[mysqld6]
+#skip-slave-start
+skip-locking
+skip-name-resolve
+skip-innodb
+#old-passwords
+port                            = 3311
+user                            = mysql
+socket                          = /tmp/mysql6.sock
+log-output                      = FILE
+basedir                         = /usr
+datadir                         = /www/db6
+tmpdir                          = /www/tmp/mysql6
+symbolic-links                  = 0
+#log                             = /logs/mysql/query6_log
+log-error                       = /logs/mysql/mysql6
+log-slow-queries                = /logs/mysql/mysql6-slow.log
+long_query_time                 = 2
+
+server-id                       = 216
+relay-log                       = mysql-bin-relay
+master-host                     = mysql20.photofile.ru
+master-user                     = replication
+master-port		            	= 3311
+master-password                 = hidden
+master-connect-retry            = 10
+replicate-do-db                 = photofile_part
+replicate-do-db                 = express_part
+slave_skip_errors               = 1053,1062,1146
+expire_logs_days                = 14
+
+default-storage-engine          = MyISAM
+
+key_buffer_size                 = 192M
+myisam-recover                  = BACKUP,FORCE
+#delay_key_write                = ALL
+
+max_connections                 = 1024          # 100
+max_connect_errors              = 10000         # 10
+thread_cache_size               = 64             # 0
+table_cache                     = 2048          # 64
+max_allowed_packet              = 64M            # 1M
+myisam_sort_buffer_size         = 32M           # 8M
+#sort_buffer_size                = 4M            # 2M
+read_buffer_size                = 256K            # 128K
+read_rnd_buffer_size            = 512K          # 256K
+tmp_table_size                  = 64M           # 32M
+#max_seeks_for_key               = 8192          # 4bil
+query_cache_size                = 8M            # 0
+max_write_lock_count            = 8             # 4bil
+
+[mysqld_safe]
+log-error                       = /var/log/mysqld.log
+pid-file                        = /var/run/mysqld/mysqld.pid
+
+[myisamchk]
+key_buffer                      = 512M
+sort_buffer                     = 512M
+read_buffer                     = 64M
+tmpdir                          = /www/tmp/mysql
+

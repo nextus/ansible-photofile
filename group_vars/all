@@ -1,0 +1,32 @@
+---
+
+# path to the nginx pid file
+NGINX_PID: /var/run/nginx.pid
+
+LOG_DIR: /logs
+
+NGINX_ACCESS_LOG: access_log
+NGINX_ERROR_LOG: nginx_error_log
+
+APACHE_PID: /var/run/httpd.pid
+
+APACHE_ACCESS_LOG: apache_access_log
+APACHE_ERROR_LOG: error_log
+
+PHP_DIR: /usr/local/php
+
+SUBNETS: [ 10.31.0.0/23,
+            80.68.240.0/20,
+            195.239.111.0/24,
+            195.68.160.0/24,
+            195.239.86.0/24,
+            83.229.209.0/24,
+            213.221.39.0/24,
+            195.239.242.0/24,
+            62.141.94.0/24,
+            81.211.64.0/25,
+            89.17.36.246/32,
+            91.192.71.195/32,
+            217.15.49.217/32,
+            188.93.246.86/32,
+        ]

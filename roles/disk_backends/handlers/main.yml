@@ -1,0 +1,8 @@
+---
+
+- name: reload nginx
+  service: name=nginx state=reloaded
+
+- name: reload httpd2
+  service: name=httpd2 state=reloaded
+

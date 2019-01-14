@@ -1,0 +1,43 @@
+---
+
+- name: Create directory for default vhost
+  file: path=/www/{{ inventory_hostname }} owner=root group=wheel mode=0775 state=directory
+  tags:
+    - www
+    - apache
+
+- name: Put index.php in default vhost
+  copy: src=files/default_index.php dest=/www/{{ inventory_hostname }}/index.php owner=root group=wheel mode=0664
+  tags:
+    - www
+    - apache
+
+- name: Deploy kill_converts.sh
+  copy: src=files/kill_converts.sh dest=/root/bin/kill_converts.sh owner=root group=wheel mode=775
+
+- name: Resolve IP address for each backends
+  local_action: shell getent hosts {{ SHOT_BACKEND }} | head -1 | cut -d' ' -f1 
+  register: SHOT_BACKEND_IP
+  changed_when: False
+  always_run: yes 
+  tags:
+    - www 
+    - apache
+
+- name: Copy httpd2 configuration files
+  template: src={{ item }}.j2 dest={{ APACHE_CONF_DIR }}/{{ item }} backup=no owner=root group=wheel mode=0644
+  with_items:
+    - httpd.conf
+  notify:
+    - reload httpd2
+  tags:
+    - www
+    - apache
+
+- name: Run httpd2 service at boot time
+  service: name=httpd2 enabled=yes state=started
+  when: ansible_system == "Linux"
+  tags:
+    - www
+    - apache
+

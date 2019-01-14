@@ -1,0 +1,205 @@
+{% include 'templates/banner.j2' %}
+
+geo $lang {
+    default en;
+    include /usr/local/nginx/conf/geo.ru;
+}
+
+geo $denyexpress {
+    default 0;
+    include /usr/local/nginx/conf/denyexpress;
+}
+
+upstream backend {
+    server int1.photofile.ru weight=24;     # lumen.itmm.ru
+    server int3.photofile.ru weight=16;     # xid.itmm.ru
+}
+
+upstream ysearch {
+    server proxy1.search.photofile.ru;      # lumen.itmm.ru
+    server proxy2.search.photofile.ru;      # xid.itmm.ru
+}
+
+upstream expressuploader {
+    #server up001.photofile.ru:8080;         # sunduk.itmm.ru
+    server up002.photofile.ru:8080;         # tanker.itmm.ru
+}
+
+upstream search2 {
+    server int1.photofile.ru;       # lumen.itmm.ru
+    server int3.photofile.ru;       # xid.itmm.ru
+}
+
+upstream rb {
+#server 80.68.242.213:8888;   #lobzik
+#server 195.239.111.94:8888;  #redwood
+#server 195.239.111.66:8888;  #bobik
+#server 195.68.160.114:8888;  #echo
+    server 195.68.160.37:8888; #moon
+}
+
+log_format droch '$remote_addr - $status $remote_user [$time_local] '
+'"$request" '
+'"$http_referer" "$http_user_agent"';
+
+log_format reqtimelog '$remote_addr - $remote_user $host [$time_local] - $upstream_addr reqtime:[$request_time] '
+'"$request" $status $body_bytes_sent '
+'"$http_referer" "$http_user_agent"';
+
+server {
+    listen          195.239.111.3:80;
+    listen          195.239.111.33:80;
+
+    server_name     photofile.name 
+        www.photofile.name 
+        photofile.ru 
+        www.photofile.ru 
+        fotofile.ru 
+        www.fotofile.ru 
+        maint.photofile.ru
+        *.foto-file.ru
+        *.photo-file.ru;
+
+    location ~ /.svn/ { deny all; }
+
+    location = / { 
+        rewrite ^/(.*)$ "http://photo.qip.ru/index.php?from=photofile" permanent;
+    }   
+
+    location / { 
+        rewrite ^/(.*)$ http://photo.qip.ru/$1 permanent;
+    }   
+}
+
+server {
+    listen          195.239.111.3:80;
+    listen          195.239.111.33:80;
+
+    server_name     fotki.qip.ru www.photo.qip.ru foto.qip.ru;
+    location ~ /.svn/ { deny all; }
+
+    location / { 
+        rewrite ^/(.*)$ http://photo.qip.ru/$1 permanent;
+    }   
+}
+
+server {
+    listen          195.239.111.3:80;
+    listen          195.239.111.33:80;
+
+    server_name     fun.qip.ru www.fun.qip.ru;
+
+    ssl_certificate         /usr/local/nginx/conf/certs/server.crt;
+    ssl_certificate_key     /usr/local/nginx/conf/certs/server.key;
+
+    location ~ /.svn/ { deny all; }
+
+    location = /users/bagoebago/ {
+        rewrite /users/bagoebago/ http://photo.qip.ru/users/bagoebago/ permanent;
+    }
+
+    location / {
+        rewrite ^/(.*)$ http://fun.photo.qip.ru/$1 permanent;
+    }
+}
+
+server {
+    listen          195.239.111.3:80;
+    listen          195.239.111.33:80;
+
+    server_name     www.pics.qip.ru;
+
+    location ~ /.svn/ { deny all; }
+
+    location / {
+        rewrite ^/(.*)$ http://pics.qip.ru/$1 permanent;
+    }
+}
+
+server {
+    listen          195.239.111.3:80;
+    listen          195.239.111.33:80;
+
+    server_name     dummy.photofile.ru
+        *.photofile.name
+        *.photofile.ru 
+        *.fotofile.ru 
+        *.photofile.es
+        *.fotofile.es
+        photofile.com.ua
+        *.photofile.com.ua
+        fotoplenka.ru 
+        *.fotoplenka.ru 
+        photoplenka.ru
+        *.photoplenka.ru;
+        
+#need to rewrite request like  ^/(users|photo|genres|preview_photo)/ {
+    location / {
+        rewrite ^/(.*)$ http://photo.qip.ru/$1 permanent;
+    }
+        
+    location = / {
+        if ($host ~ "^photoplenka.ru$" ) {
+            rewrite ^/(.*)$ "http://photo.qip.ru/index.php?from=fotoplenka" permanent;
+            break;
+        }   
+        if ($host ~* "^(www)\.photoplenka.ru$" ) {
+            rewrite ^/(.*)$ "http://photo.qip.ru/index.php?from=fotoplenka" permanent;
+        }
+
+        if ($host ~ "^fotoplenka.ru$" ) {
+            rewrite ^/(.*)$ "http://photo.qip.ru/index.php?from=fotoplenka" permanent;
+            break;
+        }   
+            
+        if ($host ~* "^(www)\.fotoplenka.ru$" ) {
+            rewrite ^/(.*)$ "http://photo.qip.ru/index.php?from=fotoplenka" permanent;
+        }
+
+        if ($host ~ "^photofile.com.ua$" ) {
+            rewrite ^/(.*)$ "http://photo.qip.ru/index.php?from=photofile" permanent;
+        }
+            
+        if ($host ~ "^(www)\.photofile.com.ua$" ) {
+            rewrite ^/(.*)$ "http://photo.qip.ru/index.php?from=photofile" permanent;
+        }
+            
+        if ($host ~ "([0-9a-z_-]+)\.(f|ph)otofile.ru$" ) {
+            set $param $1;
+            rewrite ^ http://photofile.ru/users/$param/ permanent;
+        }   
+
+        if ($host ~ "([0-9a-z_-]+)\.(f|ph)otofile.es$" ) {
+            set $param $1;
+            rewrite ^ http://photo.qip.ru/users/$param/ permanent;
+        }
+            
+        if ($host ~ "([0-9a-z_-]+)\.photofile.name$" ) {
+            set $param $1;
+            rewrite ^ http://photo.qip.ru/users/$param/ permanent;
+        }   
+            
+        if ($host ~ "([0-9a-z_-]+)\.photofile.com.ua$" ) {
+            set $param $1;
+            rewrite ^ http://photo.qip.ru/users/$param/ permanent;
+        }
+            
+        if ($host ~ "([0-9a-z_-]+)(\.fotoplenka).ru$" ) {
+            set $param $1$2;
+            rewrite ^ http://photo.qip.ru/users/$param/ permanent;
+        }
+        if ($host ~ "([0-9a-z_-]+)\.photoplenka.ru$" ) {
+            set $param $1;
+            rewrite ^ http://photoplenka.ru/users/$param/ permanent;
+        }
+    }
+    location ~ /.svn/ { deny all; }
+}
+
+#MAINSERVER
+{% import "nginx.photofile.mainserver.conf.j2" as template with context %}
+{{ template.input(upstream,80,1) }}
+#MAINSERVER
+
+# Autogenerated configs to work with particular faces via custom port
+include         nginx.photofile.face.conf;

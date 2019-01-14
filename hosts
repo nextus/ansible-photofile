@@ -1,0 +1,194 @@
+[all:vars]
+ansible_python_interpreter=/usr/bin/env python2
+MEMCACHED_PORT=11211
+CACHED_BIND="YES"
+
+[centraal]
+lizun.itmm.ru
+
+[monitoring]
+icinga.relax.ru
+
+# PHOTO.QIP.RU
+
+[ff:children]
+ff_frontends
+ff_backends
+ff_storages
+ff_backups
+ff_db
+ff_db_backup
+
+[ff:vars]
+bsd_firewall=ipfw
+CRON_MAIL=photofile-cron@itmm.ru
+
+[ff_frontends:vars]
+CACHED_BIND="NO"
+
+[ff_frontends]
+alma.itmm.ru        FF_PROXY_ID=1
+zelda.itmm.ru       FF_PROXY_ID=2
+
+[ff_backends:vars]
+SPAM=YES
+
+[ff_backends]
+lumen.itmm.ru          FF_BACKEND=int1.photofile.ru
+xid.itmm.ru            FF_BACKEND=int3.photofile.ru
+
+[ff_memcaches]
+leica.itmm.ru
+tanker.itmm.ru
+ocelot.itmm.ru
+lumen.itmm.ru
+xid.itmm.ru
+gigant.itmm.ru
+
+[ff_backups]
+alcohol.itmm.ru        RSYNC_TIME=01:01
+bashmak.itmm.ru        RSYNC_TIME=01:10
+bazykin.itmm.ru        RSYNC_TIME=01:20
+biv.itmm.ru            RSYNC_TIME=01:30
+fonar.itmm.ru          RSYNC_TIME=01:40
+frodo.itmm.ru          RSYNC_TIME=01:50
+gastronom.itmm.ru      RSYNC_TIME=02:00
+gigant.itmm.ru         RSYNC_TIME=02:10
+#hiv.itmm.ru            RSYNC_TIME=02:20
+kerosin.itmm.ru        RSYNC_TIME=02:30
+kim.itmm.ru            RSYNC_TIME=02:40
+kong.itmm.ru           RSYNC_TIME=02:50
+kukuruza.itmm.ru       RSYNC_TIME=03:00
+lampa.itmm.ru          RSYNC_TIME=03:10
+leica.itmm.ru           RSYNC_TIME=03:20
+lizun.itmm.ru           RSYNC_TIME=03:30
+mutant.itmm.ru         RSYNC_TIME=03:40
+nosorog.itmm.ru        RSYNC_TIME=03:50        DISABLE_BACKUP=YES
+ocelot.itmm.ru         RSYNC_TIME=04:00        DISABLE_BACKUP=YES
+sapog.itmm.ru          RSYNC_TIME=04:20
+#sovok.itmm.ru          RSYNC_TIME=04:30
+spirit.itmm.ru         RSYNC_TIME=04:40
+strashila.itmm.ru      RSYNC_TIME=04:50
+sultan.itmm.ru         RSYNC_TIME=05:00
+sunduk.itmm.ru         RSYNC_TIME=05:10
+swing.itmm.ru          RSYNC_TIME=05:20
+tanker.itmm.ru         RSYNC_TIME=05:30
+udav.itmm.ru           RSYNC_TIME=05:40
+#valenok.itmm.ru        RSYNC_TIME=05:50
+zanuda.itmm.ru          RSYNC_TIME=06:00
+zenith.itmm.ru         RSYNC_TIME=06:10
+
+[ff_storages]
+alcohol.itmm.ru
+ananas.itmm.ru
+bazykin.itmm.ru
+fix.itmm.ru
+fonar.itmm.ru
+gastronom.itmm.ru
+gerakl.itmm.ru
+gigant.itmm.ru
+hih.itmm.ru
+jix.itmm.ru
+katamaran.itmm.ru
+kerosin.itmm.ru
+kih.itmm.ru
+kix.itmm.ru
+kong.itmm.ru
+kukuruza.itmm.ru
+lampa.itmm.ru
+leica.itmm.ru
+lih.itmm.ru
+mutant.itmm.ru
+nosorog.itmm.ru
+ocelot.itmm.ru
+popugai.itmm.ru
+sapog.itmm.ru
+spirit.itmm.ru
+sultan.itmm.ru
+sunduk.itmm.ru
+tanker.itmm.ru
+tih.itmm.ru
+udav.itmm.ru
+universam.itmm.ru
+zenith.itmm.ru
+
+[ff_db]
+chaos.relax.ru
+amber.relax.ru
+lux.relax.ru
+volt.relax.ru
+
+[ff_db_backup]
+lizun.itmm.ru
+
+
+# SHOT.QIP.RU
+
+[shot:children]
+shot_storages
+shot_backends
+shot_backups
+
+[shot:vars]
+BACKUP_USER=w3shot-backup
+CRON_MAIL=shot-cron@itmm.ru
+
+[shot_backends:vars]
+SPAM=YES
+
+[shot_backends]
+ketamine.itmm.ru   SHOT_BACKEND=web1.shot.qip.ru
+kunugi.itmm.ru     SHOT_BACKEND=web2.shot.qip.ru
+
+[shot_storages]
+xerox.itmm.ru      SHOT_STORAGE_ID=1
+kodak.itmm.ru      SHOT_STORAGE_ID=2
+pix.itmm.ru        SHOT_STORAGE_ID=3
+sigma.itmm.ru      SHOT_STORAGE_ID=4
+pokemon.itmm.ru    SHOT_STORAGE_ID=5
+benzin.itmm.ru     SHOT_STORAGE_ID=6
+
+[shot_backups]
+xerox.itmm.ru      RSYNC_TIME=02:30 SHOT_STORAGE_BACKUP_ID=2
+kodak.itmm.ru      RSYNC_TIME=04:30 SHOT_STORAGE_BACKUP_ID=1
+pix.itmm.ru        RSYNC_TIME=03:00 SHOT_STORAGE_BACKUP_ID=4
+sigma.itmm.ru      RSYNC_TIME=05:00 SHOT_STORAGE_BACKUP_ID=3
+pokemon.itmm.ru    RSYNC_TIME=03:00 SHOT_STORAGE_BACKUP_ID=6
+benzin.itmm.ru     RSYNC_TIME=05:00 SHOT_STORAGE_BACKUP_ID=5
+
+
+# FS.QIP.RU
+
+[fs:children]
+fs_storages
+fs_frontends
+fs_backends
+
+[fs:vars]
+CRON_MAIL=photofile-cron@itmm.ru
+
+[fs_storages]
+muhtar.itmm.ru
+omar.itmm.ru
+
+[fs_frontends]
+orion.itmm.ru
+fargo.itmm.ru
+
+[fs_backends]
+dit.itmm.ru
+
+
+# FILES.QIP.RU
+
+[disk:children]
+disk_storages
+
+[disk_storages]
+fs1.relax.ru
+fs2.relax.ru
+fs3.relax.ru
+
+[disk_backends]
+chibis.itmm.ru
+
